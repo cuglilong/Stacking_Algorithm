@@ -9,6 +9,7 @@ import scipy.cluster.hierarchy as cluster
 import mpl_toolkits
 import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
+from collections import Counter
 
 # Clustering and stacking data
 # Clusters using data from b
@@ -31,9 +32,9 @@ def haversine(coord1, coord2):
 	return R*c
 
 def combined_metric(a, b, include_corr = False, include_dist = True):
-	if (include_corr == False):
+	if (include_dist == False):
 		return haversine(a[-2:], b[-2:])
-	elif (include_dist == False):
+	elif (include_corr == False):
 		return correlation(a[:-2],b[:-2])
 	else:
 		corr = correlation(a[:-2],b[:-2])
@@ -46,15 +47,14 @@ def stack_coords(cluster, coords):
 	coords = np.nan_to_num(coords)
 	return coords
 
-def plot_stacks(stacks, depths, cluster, coords, figname):
+def plot(stacks, depths, cluster, coords, figname):
 
 	colours = []
 	for i in range(1, np.max(cluster).astype(int) +1):
 		a = '%06X' % randint(0, 0xFFFFFF)
 		b = '#' + a
 		colours.append(b)
-	colour_clusters = [colours[cluster[j]-1] for j in range(len(cluster))]
-	
+	colour_clusters = [colours[(cluster[j]-1).astype(np.int)] for j in range(len(cluster))]
 	plt.figure(1)
 	
 	plt.subplot(121)
@@ -62,7 +62,7 @@ def plot_stacks(stacks, depths, cluster, coords, figname):
 	plt.ylabel('amplitude relative to main P wave')
 	count = 0
 	for stack in stacks:
-		plt.plot(depths, stack, color = colours[count])
+		plt.plot(depths, stack, color = colours[count-1])
 		count+=1
 	
 	plt.subplot(122)
@@ -87,15 +87,21 @@ def cluster_data(a, b, metric, threshold):
         return cluster, stacks
 
 def second_cluster(cluster, coordinates, stacks, threshold, include_dist = True, include_corr = False):
+	
+	# Formatting data
 	comb_metric = (lambda a, b: combined_metric(a, b, include_dist, include_corr))
 	new_coords = stack_coords(cluster, coordinates)
 	new_data = np.append(stacks, new_coords, axis=1)
+	
+	# Clustering data
 	cluster_2, stacks = cluster_data(new_data, new_data, comb_metric, threshold)
+	# Running through old cluster and re-formatting data
 	new_cluster = np.zeros(len(cluster))
 	for cl in np.arange(1, np.max(cluster).astype(int)+1):
         	new_cluster[np.where(cluster == cl)] = cluster_2[cl-1].astype(int)
 	stacks = stacks[:, :-2]
 	cluster = new_cluster.astype(int)
+
 	return cluster, stacks
 
 file =sys.argv[1]
@@ -108,19 +114,18 @@ seis_data = np.array([tr.data for tr in seis])
 loc410 = np.array([t.stats.piercepoints['P410s']['410'] for t in seis]).astype(float)
 coordinates = np.array([(l410[1], l410[2]) for l410 in loc410])
 depths = np.array(seis[0].depth)
-coordinates = coordinates[:5000, :]
-seis_data = seis_data[:5000, :]
+coordinates = coordinates[:, :]
+seis_data = seis_data[:, :]
 
 # Clustering and stacking
-print("First stack...")
-cluster = np.arange(1,len(seis_data)+1)
-cluster, stacks = second_cluster(cluster, coordinates, seis_data, 100)
-print("Second stack...")
-cluster, stacks = second_cluster(cluster, coordinates, stacks, 60, include_corr = True)
-print("Third stack...")
-cluster, stacks = second_cluster(cluster, coordinates, stacks, 15, include_corr = True, include_dist = False)
+#print("First stack...")
+#cluster = np.arange(1,len(seis_data)+1)
+#cluster, stacks = second_cluster(cluster, coordinates, seis_data, 100)
+#print("Second stack...")
+#cluster, stacks = second_cluster(cluster, coordinates, stacks, 50, include_corr = True)
+#print("Third stack...")
+#cluster, stacks = second_cluster(cluster, coordinates, stacks, 15, include_corr = True, include_dist = False)
 
 # Plot data
-print("Plotting...")
-plot_stacks(stacks, depths, cluster, coordinates, "combined_stacks")
-#plot_map(stacks, depths, cluster, coordinates, "combined_map")
+#print("Plotting...")
+#plot(stacks, depths, cluster, coordinates, "combined_stacks")
