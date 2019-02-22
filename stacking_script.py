@@ -38,12 +38,12 @@ def read_in(no_stacks, filename):
 				line_count += 1
 	return cluster, stacks
 
-def remove_anoms(cluster, stacks, coords):
+def remove_anoms(cluster, stacks, coords, size):
 	to_remove = np.array([])
 	remove_cluster = np.array([])
 	for c in np.arange(np.max(cluster)):
 		a = np.where(cluster == c+1)[0]
-		if (len(a) < 10):
+		if (len(a) < size):
 			to_remove = np.append(to_remove, [c], axis=0)
 			remove_cluster = np.append(remove_cluster, a, axis=0)
 	stacks = np.delete(stacks, to_remove.astype(int), axis=0)
@@ -57,13 +57,13 @@ def remove_anoms(cluster, stacks, coords):
 	return cluster, stacks, coords
 
 print("Stacking...")
-cluster, stacks = read_in(50, '100_to_50.csv')
-#cluster, stacks, coords = remove_anoms(cluster, stacks, hs.coordinates)
-#cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold=100, crit='maxclust', dist = True, corr = True)
-#print_out(cluster, stacks, '1750_to_100.csv')
-#cluster, stacks, coords = remove_anoms(cluster, stacks, coords)
-#cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 50, crit='maxclust', dist = True, corr = False)
-#print_out(cluster, stacks, '100_to_50.csv')
-cluster, stacks, coords = remove_anoms(cluster, stacks, coords)
-#cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 10, crit='maxclust', dist = False, corr = True)
-hs.plot(stacks, hs.depths, cluster, coords, "test1", anomal = False)
+cluster, stacks = read_in(1750, 'stack_data.csv')
+cluster, stacks, coords = remove_anoms(cluster, stacks, hs.coordinates, 10)
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold=100, crit='maxclust', dist = True, corr = True)
+print_out(cluster, stacks, '1750_to_100.csv')
+cluster, stacks, coords = remove_anoms(cluster, stacks, coords, 2)
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 60, crit='maxclust', dist = True, corr = False)
+print_out(cluster, stacks, '100_to_60.csv')
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = False, corr = True)
+print_out(cluster, stacks, '60_down.csv')
+hs.plot(stacks, hs.depths, cluster, coords, "figure", anomal = False)
