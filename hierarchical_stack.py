@@ -49,32 +49,7 @@ def stack_coords(cluster, coords):
 
 	return coords
 
-def plot_stack(stack, clus_num, cluster, depths, coords, figname):
-	plt.figure(1)
-
-	plt.subplot(121)
-	plt.xlabel('depth (km)')
-	plt.ylabel('amplitude relative to main P wave')
-	plt.plot(depths, stack, color='red')
-
-	plt.subplot(122)
-	plt.xlabel('longitude')
-	plt.ylabel('latitude')
-	lon410 = np.array([co[1] for co in coords])
-	lat410 = np.array([co[0] for co in coords])
-	m = Basemap(llcrnrlon=np.min(lon410)-5.,llcrnrlat=np.min(lat410)-5.,urcrnrlon=np.max(lon410)+5.,urcrnrlat=np.max(lat410)+5.,
-		resolution='i',projection='merc',lon_0=np.mean(lon410),lat_0=np.mean(lat410))
-	m.shadedrelief()
-	m.drawparallels(np.arange(-40,80.,5.),color='gray')
-	m.drawmeridians(np.arange(-30.,80.,5.),color='gray')
-	print(clus_num)
-	for i in np.where(cluster == clus_num)[0]:
-		lon, lat = m(coords[i][1], coords[i][0])
-		plt.plot(lon, lat, marker='x', markeredgecolor='red')
-	plt.savefig(figname)
-	plt.clf()
-
-def plot(stacks, depths, cluster, coords, figname, anomal=True):
+def plot(stacks, depths, cluster, coords, figname, anomal=True, plot_individual = False):
 
 	colours = []
 	for i in range(1, np.max(cluster).astype(int) +1):
@@ -86,44 +61,60 @@ def plot(stacks, depths, cluster, coords, figname, anomal=True):
 	fig, axes = plt.subplots(1,2)
 	ax1 = axes[0]
 	ax2 = axes[1]
-	
-	ax2.set_xlabel('longitude')
-	ax2.set_ylabel('latitude')
 	lon410 = np.array([co[1] for co in coordinates])
 	lat410 = np.array([co[0] for co in coordinates])
+
+	if plot_individual == True:
+		count = 0
+		for stack in stacks:
+			if (anomal == False and len(np.where(cluster == count+1)[0])<400):
+				count+=1
+			else:
+				ax2.set_xlabel('longitude')
+				ax2.set_ylabel('latitude')
+				lon410 = np.array([co[1] for co in coordinates])
+				lat410 = np.array([co[0] for co in coordinates])
+				m = Basemap(llcrnrlon=np.min(lon410)-5.,llcrnrlat=np.min(lat410)-5.,urcrnrlon=np.max(lon410)+5.,urcrnrlat=np.max(lat410)+5.,
+				resolution='i',projection='merc',lon_0=np.mean(lon410),lat_0=np.mean(lat410))
+				m.shadedrelief()
+				m.drawparallels(np.arange(-40,80.,5.),color='gray')
+				m.drawmeridians(np.arange(-30.,80.,5.),color='gray')
+				
+				ax1.set_xlabel('depth (km)')
+				ax1.set_ylabel('amplitude relative to main P wave')
+				ax1.plot(depths, stack, color = colours[count])
+				for i in np.where(cluster == count+1)[0]:
+					lon, lat = m(coords[i][1], coords[i][0])
+					m.plot(lon, lat, marker='x', markeredgecolor = colour_clusters[i])
+				count+=1
+				fig.savefig(figname + str(count))
+				ax1.clear()
+				ax2.clear()
+	
+	ax1.set_xlabel('depth (km)')
+	ax1.set_ylabel('amplitude relative to main P wave')
+	ax2.set_xlabel('longitude')
+	ax2.set_ylabel('latitude')
 	m = Basemap(llcrnrlon=np.min(lon410)-5.,llcrnrlat=np.min(lat410)-5.,urcrnrlon=np.max(lon410)+5.,urcrnrlat=np.max(lat410)+5.,
-            resolution='i',projection='merc',lon_0=np.mean(lon410),lat_0=np.mean(lat410))
+	resolution='i',projection='merc',lon_0=np.mean(lon410),lat_0=np.mean(lat410))
 	m.shadedrelief()
 	m.drawparallels(np.arange(-40,80.,5.),color='gray')
 	m.drawmeridians(np.arange(-30.,80.,5.),color='gray')
+	count = 0
+	for stack in stacks:
+		if (anomal == False and len(np.where(cluster == count+1)[0])<400):
+			count+=1
+		else:
+			ax1.plot(depths, stack, color = colours[count])
+			count+=1
 	
 	for i in range(len(coords)):
 		lon, lat = m(coords[i][1], coords[i][0])
 		m.plot(lon, lat, marker='x', markeredgecolor=colour_clusters[i])
-
-	ax1.set_xlabel('depth (km)')
-	ax1.set_ylabel('amplitude relative to main P wave')
-	
-	count = 0
-	for stack in stacks:
-		if (anomal == False and len(np.where(cluster == count+1)[0])<400):
-			count+=1
-		else:
-			ax1.plot(depths, stack, color = colours[count])
-			count+=1
-			fig.savefig(figname + str(count))
-			ax1.clear()
-	
-	count = 0
-	for stack in stacks:
-		if (anomal == False and len(np.where(cluster == count+1)[0])<400):
-			count+=1
-		else:
-			ax1.plot(depths, stack, color = colours[count])
-			count+=1
 	
 	fig.savefig(figname)
 	fig.show()
+
 def cluster_data(a, b, metric, threshold, crit):
         cluster = sp.cluster.hierarchy.fclusterdata(b, t=threshold, criterion=crit, metric=metric, method='average')
         stacks = np.array([[np.sum([a[i][j] for i in np.where(cluster == cl)[0]]) for j in range(len(a[0]))] for cl in range(np.max(cluster))])
