@@ -16,8 +16,8 @@ from collections import Counter
 # Then stacks the data in a
 # Returns stacked data and list of cluster indices
 
-def correlation(tr1, tr2):
-	return np.sum([(tr1[i] - tr2[i])**2 for i in range(len(tr1))])
+def correlation(tr1, tr2, n=2):
+	return np.absolute(np.sum([(tr1[i] - tr2[i])**n for i in range(len(tr1))]))
 
 def haversine(coord1, coord2):
 
@@ -49,7 +49,7 @@ def stack_coords(cluster, coords):
 
 	return coords
 
-def plot(stacks, depths, cluster, coords, figname, anomal=True, plot_individual = False):
+def plot(stacks, depths, cluster, coords, seis_data, figname, anomal=True, plot_individual = False):
 
 	colours = []
 	for i in range(1, np.max(cluster).astype(int) +1):
@@ -82,8 +82,10 @@ def plot(stacks, depths, cluster, coords, figname, anomal=True, plot_individual 
 				
 				ax1.set_xlabel('depth (km)')
 				ax1.set_ylabel('amplitude relative to main P wave')
+				inds = np.where(cluster == count+1)[0]
 				ax1.plot(depths, stack, color = colours[count])
-				for i in np.where(cluster == count+1)[0]:
+
+				for i in inds:
 					lon, lat = m(coords[i][1], coords[i][0])
 					m.plot(lon, lat, marker='x', markeredgecolor = colour_clusters[i])
 				count+=1
@@ -114,11 +116,36 @@ def plot(stacks, depths, cluster, coords, figname, anomal=True, plot_individual 
 	
 	fig.savefig(figname)
 	fig.show()
+	
+def depth_plot(cluster, stacks, coords, depths, figname):
+	
+	fig = plt.figure(1)
+	axes = plt.gca()
+	axes.set_xlabel('longitude')
+	axes.set_ylabel('latitude')
+	lon410 = np.array([co[1] for co in coords])
+	lat410 = np.array([co[0] for co in coords])
+	lon = [coords[i][1] for i in range(len(coords))]
+	lat = [coords[i][0] for i in range(len(coords))]
+	cut_index = np.argmax(depths>350)
+	cropped_depths = depths[cut_index:]
+	cropped_stacks = [stack[cut_index:] for stack in stacks]
+
+	sig_depths = [cropped_depths[np.argmax(stack)] for stack in cropped_stacks]
+	coord_depths = [sig_depths[cluster[i]-1] for i in range(len(coords))]
+	cb = axes.scatter(lon, lat, c=coord_depths, marker='x', cmap=plt.cm.get_cmap('RdBu'))
+	fig.colorbar(cb, ax=axes)
+	fig.savefig(figname)
+	fig.show()
 
 def cluster_data(a, b, metric, threshold, crit):
-        cluster = sp.cluster.hierarchy.fclusterdata(b, t=threshold, criterion=crit, metric=metric, method='average')
-        stacks = np.array([[np.sum([a[i][j] for i in np.where(cluster == cl)[0]]) for j in range(len(a[0]))] for cl in range(np.max(cluster))])
-        return cluster, stacks
+	cluster = sp.cluster.hierarchy.fclusterdata(b, t=threshold, criterion=crit, metric=metric, method='average')
+	stacks = np.array([[np.sum([a[i][j] for i in np.where(cluster == cl+1)[0]]) for j in range(len(a[0]))] for cl in range(np.max(cluster))])
+	for cl in range(1, np.max(cluster+1)):
+		length = len(np.where(cluster == cl)[0])
+		stacks[cl-1] = stacks[cl-1]/length
+	stacks = np.nan_to_num(stacks)
+	return cluster, stacks
 
 def second_cluster(cluster, coordinates, stacks, threshold, crit, dist = True, corr = False):
 	

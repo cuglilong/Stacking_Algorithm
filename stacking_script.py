@@ -38,7 +38,7 @@ def read_in(no_stacks, filename):
 				line_count += 1
 	return cluster, stacks
 
-def remove_anoms(cluster, stacks, coords, size):
+def remove_anoms(cluster, stacks, coords, seis_data, size):
 	to_remove = np.array([])
 	remove_cluster = np.array([])
 	for c in np.arange(np.max(cluster)):
@@ -54,19 +54,24 @@ def remove_anoms(cluster, stacks, coords, size):
 		cluster[np.where(cluster==c)[0]] = count
 		count += 1
 	coords = np.delete(coords, remove_cluster.astype(int), axis=0)
-	return cluster, stacks, coords
+	seis_data = np.delete(seis_data, remove_cluster.astype(int), axis=0)
+	return cluster, stacks, coords, seis_data
 
+print("Assign...")
+coords = hs.coordinates
+seis_data = hs.seis_data
+depths = hs.depths
 print("Stacking...")
-cluster, stacks = read_in(1750, 'stack_data.csv')
-print(np.max(cluster))
-cluster, stacks, coords = remove_anoms(cluster, stacks, hs.coordinates, 10)
-print(np.max(cluster))
-cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold=300, crit='maxclust', dist = True, corr = True)
-print(np.max(cluster))
-cluster, stacks, coords = remove_anoms(cluster, stacks, coords, 20)
-print(np.max(cluster))
-cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = False, corr = True)
-print(np.max(cluster))
-cluster, stacks, coords = remove_anoms(cluster, stacks, coords, 100)
-print(np.max(cluster))
-hs.plot(stacks, hs.depths, cluster, coords, "dist_and_corr", anomal = False, plot_individual = True)
+cluster, stacks = read_in(1750, 'stack_data_1.csv')
+#cluster = [i for i in range(1, len(seis_data)+1)]
+#cluster, stacks = hs.second_cluster(cluster, coords, seis_data, threshold=1750, crit='maxclust', dist = True, corr = False)
+#print_out(cluster, stacks, 'stack_data_whole_range.csv')
+cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, hs.coordinates, seis_data, 10)
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True)
+cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 20)
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = True, corr = False)
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True)
+cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 100)
+print("Plotting...")
+hs.plot(stacks, depths, cluster, coords, seis_data, "default", anomal = False, plot_individual = True)
+hs.depth_plot(cluster, stacks, coords, depths, 'depths')
