@@ -16,8 +16,17 @@ from collections import Counter
 # Then stacks the data in a
 # Returns stacked data and list of cluster indices
 
+# Returns L2 correlation between traces tr1 and tr2
+
 def correlation(tr1, tr2, n=2):
 	return np.absolute(np.sum([(tr1[i] - tr2[i])**n for i in range(len(tr1))]))
+
+# Returns average L2 correlation between all traces in a stack and their mean
+
+def group_corr(traces, stack):
+	return np.average([correlation(trace, stack) for trace in traces])
+
+# Haversine distance formula
 
 def haversine(coord1, coord2):
 
@@ -31,6 +40,8 @@ def haversine(coord1, coord2):
 
 	return R*c
 
+# 'Distance' metric to use for clustering - can weight by distance, correlation, or both
+
 def combined_metric(a, b, include_dist = True, include_corr = False):
 	if (include_corr == False):
 		return haversine(a[-2:], b[-2:])
@@ -41,11 +52,16 @@ def combined_metric(a, b, include_dist = True, include_corr = False):
 		dist = haversine(a[-2:], b[-2:])
 		return corr * dist
 
+# Returns an array of the average coordinate in a cluster - this means we are automatically making the assumption
+# that the average of a cluster is the 'typical' point, rather than the centroid, or another more complicated metric 
+
 def stack_coords(cluster, coords):
 
 	clusters = np.arange(1,np.max(cluster).astype(int)+1)
 	coords = np.array([[np.average([coords[i][j] for i in np.where(cluster == cl)[0]]) for j in [0, 1]] for cl in clusters])
 	coords = np.nan_to_num(coords)
+	print(len(coords))
+	print(len(clusters))
 
 	return coords
 
@@ -117,26 +133,47 @@ def plot(stacks, depths, cluster, coords, seis_data, figname, anomal=True, plot_
 	fig.savefig(figname)
 	fig.show()
 	
-def depth_plot(cluster, stacks, coords, depths, figname):
+def depth_plot(cluster, stacks, coords, depths, figname, fourten=True):
 	
 	fig = plt.figure(1)
 	axes = plt.gca()
 	axes.set_xlabel('longitude')
 	axes.set_ylabel('latitude')
-	lon410 = np.array([co[1] for co in coords])
-	lat410 = np.array([co[0] for co in coords])
 	lon = [coords[i][1] for i in range(len(coords))]
 	lat = [coords[i][0] for i in range(len(coords))]
-	cut_index = np.argmax(depths>350)
+	if fourten==True:
+		cut_index = np.argmax(depths>390)
+	else:
+		cut_index = np.argmax(depths>630)
+
 	cropped_depths = depths[cut_index:]
 	cropped_stacks = [stack[cut_index:] for stack in stacks]
-
 	sig_depths = [cropped_depths[np.argmax(stack)] for stack in cropped_stacks]
 	coord_depths = [sig_depths[cluster[i]-1] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_depths, marker='x', cmap=plt.cm.get_cmap('RdBu'))
+	cb = axes.scatter(lon, lat, c=coord_depths, marker='x', cmap=plt.cm.get_cmap('cool'))
 	fig.colorbar(cb, ax=axes)
 	fig.savefig(figname)
-	fig.show()
+
+def var_plot(cluster, stacks, coords, seis_data, figname):
+	
+	fig = plt.figure(1)
+	axes = plt.gca()
+	axes.set_xlabel('longitude')
+	axes.set_ylabel('latitude')
+	lon = [coords[i][1] for i in range(len(coords))]
+	lat = [coords[i][0] for i in range(len(coords))]
+	
+	vars = np.zeros(len(stacks))
+	count = 1
+	for stack in stacks:
+		orig = seis_data[np.where(cluster==count)[0]]
+		vars[count-1] = group_corr(orig, stack)
+		count += 1
+	coord_vars = [vars[cluster[i]-1] for i in range(len(coords))]
+
+	cb = axes.scatter(lon, lat, c=coord_vars, marker='x', cmap=plt.cm.get_cmap('cool'))
+	fig.colorbar(cb, ax=axes)
+	fig.savefig(figname)
 
 def cluster_data(a, b, metric, threshold, crit):
 	cluster = sp.cluster.hierarchy.fclusterdata(b, t=threshold, criterion=crit, metric=metric, method='average')
@@ -161,7 +198,7 @@ def second_cluster(cluster, coordinates, stacks, threshold, crit, dist = True, c
 	stacks = stacks[:, :-2]
 	cluster = new_cluster.astype(int)
 
-	return cluster, stacks
+	return cluster, stacks, cluster_2
 
 file =sys.argv[1]
 print("Reading " + file + "...")
