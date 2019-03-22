@@ -69,7 +69,7 @@ def remove_anoms(cluster, stacks, coords, seis_data, size):
 	cluster = np.delete(cluster, remove_cluster.astype(int))
 	coords = np.delete(coords, remove_cluster.astype(int), axis=0)
 	seis_data = np.delete(seis_data, remove_cluster.astype(int), axis=0)
-	
+
 	# Rebuilding cluster
 	
 	cluster_set = set(cluster)
@@ -77,7 +77,7 @@ def remove_anoms(cluster, stacks, coords, seis_data, size):
 	for c in cluster_set:
 		cluster[np.where(cluster==c)[0]] = count
 		count += 1
-	
+
 	return cluster, stacks, coords, seis_data
 
 def compare_methods(cluster, stacks, coords, seis_data, figname):
@@ -138,29 +138,32 @@ def compare_methods(cluster, stacks, coords, seis_data, figname):
 		ax2.clear()
 	return
 
-min_depth = 280
-max_depth = 750
-seis_data, coordinates, depths = hs.set_up()
+min_depth = 570
+max_depth = 770
+seis_data, coords, depths = hs.set_up()
+stacks = seis_data
 cut_index_1 = np.where(depths>min_depth)[0][0]
 cut_index_2 = np.where(depths>max_depth)[0][0]
-cluster, stacks = read_in(1750, 'stack_data_whole_range.csv')
+#cluster, stacks = read_in(1750, 'stack_data_1.csv')
 depths = np.array(depths[cut_index_1:cut_index_2])
 seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
 stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
+cluster = np.arange(1, len(seis_data)+1)
 
 print("Stacking...")
-
-cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coordinates, seis_data, 10)
-cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True) #true, true
+cluster, stacks = hs.second_cluster(cluster, coords, stacks, threshold=1750, crit='maxclust', dist=True, corr=False)
+print_out(cluster, stacks, 'stack_data_SL2014_660.csv')
+cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 10)
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster, coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True) #true, true
 cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 20)
 cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = True, corr = False) #true, false
-cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True) #true, true
+#cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True) #true, true
 cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 100)
 
 print("Plotting...")
 
-hs.plot(stacks, depths, cluster, coords, seis_data, "whole_range", anomal = False, plot_individual = True)
-hs.MTZ_plot(cluster, stacks, coords, depths, 'MTZ')
-#hs.depth_plot(cluster, stacks, coords, depths, 350, 450, 'corr_depths')
-hs.var_plot(cluster, stacks, coords, seis_data, 'whole_range_vars')
-compare_methods(cluster, stacks, coords, seis_data, 'whole_range_compare')
+hs.plot(stacks, depths, cluster, coords, seis_data, "SL2014_660", anomal = False, plot_individual = True)
+#hs.MTZ_plot(cluster, stacks, coords, depths, 'SL2014_MTZ')
+hs.depth_plot(cluster, stacks, coords, depths, 590, 720, 'SL2014_660_depths')
+hs.var_plot(cluster, stacks, coords, seis_data, 'SL2014_660_vars')
+#compare_methods(cluster, stacks, coords, seis_data, 'whole_range_compare')

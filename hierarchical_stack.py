@@ -53,8 +53,8 @@ def combined_metric(a, b, include_dist = True, include_corr = False):
 
 def stack_coords(cluster, coords):
 	
-	clusters = np.arange(1,np.max(cluster).astype(int)+1)
-	coords = np.array([[np.average([coords[i][j] for i in np.where(cluster == cl)[0]]) for j in [0, 1]] for cl in clusters])
+	cls = np.arange(1,np.max(cluster).astype(int)+1)
+	coords = np.array([[np.average([coords[i][j] for i in np.where(cluster == cl)[0]]) for j in [0, 1]] for cl in cls])
 	coords = np.nan_to_num(coords)
 	
 	return coords
@@ -251,6 +251,7 @@ def cluster_data(a, b, metric, threshold, crit):
 # Returns cluster data extended to correspond to each individual data point
 
 def second_cluster(cluster, coordinates, stacks, threshold, crit, dist = True, corr = False):
+	
 	
 	# Formatting data - adding coordinates on end of trace data and creating 'distance' metric
 	
