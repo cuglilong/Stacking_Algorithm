@@ -141,14 +141,14 @@ def compare_methods(cluster, stacks, coords, seis_data, figname):
 min_depth = 570
 max_depth = 770
 seis_data, coords, depths = hs.set_up()
-stacks = seis_data
+#stacks = seis_data
 cut_index_1 = np.where(depths>min_depth)[0][0]
 cut_index_2 = np.where(depths>max_depth)[0][0]
-#cluster, stacks = read_in(1750, 'stack_data_1.csv')
+cluster, stacks = read_in(1750, 'stack_data_1.csv')
 depths = np.array(depths[cut_index_1:cut_index_2])
 seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
 stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
-cluster = np.arange(1, len(seis_data)+1)
+#cluster = np.arange(1, len(seis_data)+1)
 
 print("Stacking...")
 cluster, stacks = hs.second_cluster(cluster, coords, stacks, threshold=1750, crit='maxclust', dist=True, corr=False)
@@ -157,7 +157,7 @@ cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_
 cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster, coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True) #true, true
 cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 20)
 cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = True, corr = False) #true, false
-#cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True) #true, true
+cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True) #true, true
 cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 100)
 
 print("Plotting...")
