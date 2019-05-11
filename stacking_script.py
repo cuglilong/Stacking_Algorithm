@@ -99,9 +99,13 @@ def compare_methods(cluster, stacks, coords, seis_data, figname):
 	for avg_coord in avg_coords:
 		axes[0].plot(depths, stacks[count], color = colours[count])
 		axes[0].set_title('Cluster Stack')
+		axes[0].set_xlabel('Depth (km)')
+		axes[0].set_ylabel('Amplitude relative to main P wave')
 		axes[0].set_ylim(-0.1, 0.1)
 		axes[1].plot(d, profiles[count], color = colours[count])
 		axes[1].set_title('CCP Stack')
+		axes[1].set_xlabel('Depth (km)')
+		axes[1].set_ylabel('Amplitude relative to main P wave')
 		axes[1].set_ylim(-0.1, 0.1)
 		s = stacks[count]
 		comp_stack = [np.average([s[i],s[i+1],s[i+2],s[i+3]]) for i in range(0, len(s), 100)]
@@ -138,21 +142,20 @@ def compare_methods(cluster, stacks, coords, seis_data, figname):
 		ax2.clear()
 	return
 
-min_depth = 570
-max_depth = 770
+min_depth = 280
+max_depth = 780
 seis_data, coords, depths = hs.set_up()
-#stacks = seis_data
+stacks = seis_data
 cut_index_1 = np.where(depths>min_depth)[0][0]
 cut_index_2 = np.where(depths>max_depth)[0][0]
-cluster, stacks = read_in(1750, 'stack_data_1.csv')
+#cluster, stacks = read_in(1750, 'stack_data_SL2014.csv')
 depths = np.array(depths[cut_index_1:cut_index_2])
 seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
 stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
-#cluster = np.arange(1, len(seis_data)+1)
+cluster = range(1, len(seis_data)+1)
 
 print("Stacking...")
 cluster, stacks = hs.second_cluster(cluster, coords, stacks, threshold=1750, crit='maxclust', dist=True, corr=False)
-print_out(cluster, stacks, 'stack_data_SL2014_660.csv')
 cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 10)
 cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster, coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True) #true, true
 cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 20)
@@ -162,8 +165,24 @@ cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_
 
 print("Plotting...")
 
-hs.plot(stacks, depths, cluster, coords, seis_data, "SL2014_660", anomal = False, plot_individual = True)
-#hs.MTZ_plot(cluster, stacks, coords, depths, 'SL2014_MTZ')
-hs.depth_plot(cluster, stacks, coords, depths, 590, 720, 'SL2014_660_depths')
-hs.var_plot(cluster, stacks, coords, seis_data, 'SL2014_660_vars')
-#compare_methods(cluster, stacks, coords, seis_data, 'whole_range_compare')
+#Choosing and isolating clusters in the plume for final plots
+
+plume = [12, 20]
+plumes = np.array([])
+not_plumes = np.array([])
+for i in range(len(cluster)):
+	if cluster[i] in plume:
+		plumes = np.append(plumes, [i])
+	else:
+		not_plumes = np.append(not_plumes, [i])
+stacks1 = [np.sum([seis_data[int(i)][j] for i in plumes])/len(plumes) for j in range(len(seis_data[0]))]
+stacks2 = [np.sum([seis_data[int(i)][j] for i in not_plumes])/len(not_plumes) for j in range(len(seis_data[0]))]
+cluster = [1 if c in plume else 2 for c in cluster]
+stacks = [stacks1, stacks2]
+
+#hs.plot(stacks, depths, cluster, coords, seis_data, "test", anomal = True, plot_individual = True, legend=['Plume', 'Mantle'])
+#hs.temp_plot(cluster, stacks, coords, depths, 'temps')
+#hs.MTZ_plot(cluster, stacks, coords, depths, 'test_MTZ')
+#hs.var_plot(cluster, stacks, coords, depths, 'test_var')
+#hs.var_plot(cluster, stacks, coords, seis_data, 'SL2014_sixsixty_vars')
+#compare_methods(cluster, stacks, coords, seis_data, 'default_compare')
