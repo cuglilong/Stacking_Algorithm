@@ -1,8 +1,9 @@
 import hierarchical_stack as hs
 from obspy import read
-from random import randint
+import random
 import matplotlib.pyplot as plt
 import sys
+import os
 
 sys.path.append('./CCP_stacks/Plotting_Scripts')
 
@@ -15,11 +16,12 @@ from collections import Counter
 import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
 import csv
+import rand_score
 import plot_CCP
 
 # Write out cluster and stacks to a csv
 
-def print_out(cluster, stacks, filename):
+def print_out(cluster, coords, stacks, filename):
 
 	file = open(filename, 'w')
 	for c in cluster:
@@ -29,25 +31,43 @@ def print_out(cluster, stacks, filename):
 		for s in stack:
 			file.write(str(s) + ', ')
 		file.write('\n')
+	file.close()
+	file1 = open(filename+'_coords', 'w')
+	for coord in coords:
+		file1.write(str(coord[0])+', '+ str(coord[1]))
+		file1.write('\n')
+	file1.close()
 
 	return
 
-# Read in cluster and stacks from a csv
+# Read in cluster and stacks from a csv - input parameters are
+# no_stacks = number of stacks to read in
+# no_coords = number of coordinates to read in
+# len_data = number of data points in a stack - eg, number of depth values
 
-def read_in(no_stacks, filename):
+def read_in(no_stacks, no_coords, len_data, filename):
 	with open(filename) as csv_file:
-		stacks = np.zeros((no_stacks,len(seis_data[0])))
+		stacks = np.zeros((no_stacks,len_data))
 		csv_reader = csv.reader(csv_file, delimiter=',')
 		line_count = 0
 		for row in csv_reader:
 			if line_count == 0:
 				cluster = row
 				cluster = np.array(cluster[:-1]).astype(float)
-				line_count += 1
+				line_count+=1
 			else:
 				stacks[line_count-1] = np.array(row[:-1]).astype(np.float)
 				line_count += 1
-	return cluster, stacks
+		print(line_count)
+	with open(filename+'_coords') as csv_file_1:
+		coords = np.zeros((no_coords, 2))
+		csv_reader_1 = csv.reader(csv_file_1, delimiter=',')
+		line_count = 0
+		for row in csv_reader_1:
+			coords[line_count] = np.array(row[:-1]).astype(float)
+			line_count += 1
+		print(line_count)
+	return cluster, stacks, coords
 
 # Remove all stacks containing fewer data points than a given size from the clusterer
 
@@ -142,47 +162,90 @@ def compare_methods(cluster, stacks, coords, seis_data, figname):
 		ax2.clear()
 	return
 
+def compare_cluster_similarity(coords1, cluster1, coords2, cluster2):
+
+	both_coords = np.append(coords1, coords2, axis=0)
+	both_coords = np.unique(both_coords, axis=0)
+	comp = both_coords
+	isin1 = np.isin(comp, coords1)
+	isin2 = np.isin(comp, coords2)
+	compare1 = np.zeros(len(both_coords))
+	compare2 = np.zeros(len(both_coords))
+	for x in range(0, len(both_coords)-1):
+		if isin1[x].all():
+			compare1[x] = cluster1[np.where(coords1 == both_coords[x])[0][0]]
+		if isin2[x].all():
+			compare2[x] = cluster2[np.where(coords2 == both_coords[x])[0][0]]
+	rand_index = rand_score.rand_index_score(compare1.astype(int), compare2.astype(int))
+	print(rand_index)
+	return rand_index
+
+def average_stack_size(cluster):
+	
+	avg = np.average([len(np.where(cluster == i)[0]) for i in np.unique(cluster)])
+	
+	return avg
+
+def unadaptive_stack(cluster, stacks, coords, seis_data):
+	
+	print("Stacking...")
+	
+	cluster, stacks = hs.second_cluster(cluster, coords, stacks, threshold=1750, crit='maxclust', dist=True, corr=False)
+	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 10)
+	cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster, coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True) #true, true
+	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 20)
+	cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = True, corr = False) #true, false
+	cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True) #true, true
+	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 100)
+	print(len(stacks))
+	print(len(coords))
+
+	return cluster, stacks, coords, seis_data
+
+def adaptive_stack(cluster, stacks, coords, seis_data):
+	
+	print("Stacking...")
+	
+	cut_length = round(len(seis_data)/10)
+	cluster, stacks = hs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 10)
+	while len(stacks) > 25:
+	       cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
+	       cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, round(average_stack_size(cluster)/2))
+	print(len(stacks))
+	print(len(coords))
+
+	return
+
+def plot(filename, anom, indiv):
+
+	print("Plotting...")
+	os.mkdir(filename)
+	os.chdir(filename)
+	hs.plot(stacks, depths, cluster, coords, seis_data, filename, anomal = anom, plot_individual = indiv)
+	print_out(cluster, coords, stacks, filename)
+	#hs.temp_plot(cluster, stacks, coords, depths, filename+'_temps')
+	#hs.MTZ_plot(cluster, stacks, coords, depths, 'test_MTZ')
+	#hs.var_plot(cluster, stacks, coords, depths, 'test_var')
+	#compare_methods(cluster, stacks, coords, seis_data, 'default_compare')
+
+	return 
+
 min_depth = 280
-max_depth = 780
+max_depth = 480
 seis_data, coords, depths = hs.set_up()
 stacks = seis_data
 cut_index_1 = np.where(depths>min_depth)[0][0]
 cut_index_2 = np.where(depths>max_depth)[0][0]
-#cluster, stacks = read_in(1750, 'stack_data_SL2014.csv')
 depths = np.array(depths[cut_index_1:cut_index_2])
 seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
 stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
 cluster = range(1, len(seis_data)+1)
 
-print("Stacking...")
-cluster, stacks = hs.second_cluster(cluster, coords, stacks, threshold=1750, crit='maxclust', dist=True, corr=False)
-cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 10)
-cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster, coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True) #true, true
-cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 20)
-cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = True, corr = False) #true, false
-cluster, stacks = hs.second_cluster(cluster, hs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True) #true, true
-cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 100)
+cluster, stacks, coords, seis_data = adaptive_stack(cluster, stacks, coords, seis_data)
+plot('test', True, False)
 
-print("Plotting...")
+#cluster1, stacks1, coords1 = read_in(12, 10723, 1000, 'test')
+#cluster2, stacks2, coords2 = read_in(8, 8082, 1000, 'adapt_remove_3000')
+#print(compare_cluster_similarity(coords1, cluster1, coords2, cluster2))
 
-#Choosing and isolating clusters in the plume for final plots
-
-plume = [12, 20]
-plumes = np.array([])
-not_plumes = np.array([])
-for i in range(len(cluster)):
-	if cluster[i] in plume:
-		plumes = np.append(plumes, [i])
-	else:
-		not_plumes = np.append(not_plumes, [i])
-stacks1 = [np.sum([seis_data[int(i)][j] for i in plumes])/len(plumes) for j in range(len(seis_data[0]))]
-stacks2 = [np.sum([seis_data[int(i)][j] for i in not_plumes])/len(not_plumes) for j in range(len(seis_data[0]))]
-cluster = [1 if c in plume else 2 for c in cluster]
-stacks = [stacks1, stacks2]
-
-#hs.plot(stacks, depths, cluster, coords, seis_data, "test", anomal = True, plot_individual = True, legend=['Plume', 'Mantle'])
-#hs.temp_plot(cluster, stacks, coords, depths, 'temps')
-#hs.MTZ_plot(cluster, stacks, coords, depths, 'test_MTZ')
-#hs.var_plot(cluster, stacks, coords, depths, 'test_var')
-#hs.var_plot(cluster, stacks, coords, seis_data, 'SL2014_sixsixty_vars')
-#compare_methods(cluster, stacks, coords, seis_data, 'default_compare')
