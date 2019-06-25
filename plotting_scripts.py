@@ -172,7 +172,6 @@ def temp_plot(cluster, stacks, coords, depths, figname):
 	signal_depths_1 = [cropped_depths_1[np.argmax(stack)] for stack in cropped_stacks_1]
 	signal_depths_2 = [cropped_depths_2[np.argmax(stack)] for stack in  cropped_stacks_2]
 	MTZ_widths = [j - i for i, j in np.stack((signal_depths_1, signal_depths_2), axis = -1)]
-	print(MTZ_widths)
 	temps = [3600-8*depth for depth in MTZ_widths]
 	coord_temps = [temps[cluster[i]-1] for i in range(len(coords))]
 

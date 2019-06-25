@@ -1,5 +1,5 @@
 import plotting_scripts as ps
-import cluster_scripts as cs
+import clustering_scripts as cs
 from obspy import read
 import random
 import matplotlib.pyplot as plt
@@ -24,19 +24,30 @@ import plot_CCP
 
 def print_out(filename):
 	
+	# Print out stacks and cluster
+	
 	file = open(filename, 'w')
 	for c in cluster:
 		file.write(str(c) + ', ')
 	file.write('\n')
+	count = 1
 	for stack in stacks:
 		for s in stack:
 			file.write(str(s) + ', ')
-		file.write('\n')
+		count += 1
+		if (count != len(stacks)):
+			file.write('\n')
 	file.close()
+	
+	# Print out coordinates
+	
 	file1 = open(filename+'_coords', 'w')
+	count = 1
 	for coord in coords:
 		file1.write(str(coord[0])+', '+ str(coord[1]))
-		file1.write('\n')
+		count +=1
+		if (count != len(stacks)):
+			file1.write('\n')
 	file1.close()
 
 	return
@@ -47,6 +58,8 @@ def print_out(filename):
 # len_data = number of data points in a stack - eg, number of depth values
 
 def read_in(no_stacks, no_coords, len_data, filename):
+	
+	global cluster, stacks, coords
 	
 	# Reading in cluster and stack data
 	
@@ -73,7 +86,7 @@ def read_in(no_stacks, no_coords, len_data, filename):
 			coords[line_count] = np.array(row[:-1]).astype(float)
 			line_count += 1
 
-	return cluster, stacks, coords
+	return
 
 # Remove all stacks containing fewer data points than a given size from the clusterer
 
@@ -85,26 +98,28 @@ def remove_anoms(size):
 
 	to_remove = np.array([])
 	remove_cluster = np.array([])
-	for c in np.arange(np.max(cluster)):
-		a = np.where(cluster == c+1)[0]
+	for c in np.arange(1, np.max(cluster)+1):
+		a = np.where(cluster == c)[0]
 		if (len(a) < size):
-			to_remove = np.append(to_remove, [c], axis=0)
+			to_remove = np.append(to_remove, [c-1], axis=0)
 			remove_cluster = np.append(remove_cluster, a, axis=0)
 	
 	# Removing all anomalies
+	
 	stacks = np.delete(stacks, to_remove.astype(int), axis=0)
 	cluster = np.delete(cluster, remove_cluster.astype(int))
 	coords = np.delete(coords, remove_cluster.astype(int), axis=0)
 	seis_data = np.delete(seis_data, remove_cluster.astype(int), axis=0)
-
+	
 	# Rebuilding cluster
 	
-	cluster_set = set(cluster)
+	cluster_set = np.unique(cluster)
 	count = 1
 	for c in cluster_set:
 		cluster[np.where(cluster==c)[0]] = count
 		count += 1
-
+	print(np.max(cluster))
+	print(stacks.shape)
 	return
 
 # Compare results of cluster stacking to results of CCP stacking,
@@ -184,26 +199,6 @@ def average_stack_size():
 	
 	return avg
 
-# Stacks current input data using an unadaptive stack routine
-
-def unadaptive_stack():
-	
-	global cluster, coords, stacks, seis_data
-	print("Stacking...")
-	
-	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=1750, crit='maxclust', dist=True, corr=False)
-	print_out(cluster, coords, stacks, 'unadaptive_first_stack')
-	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 10)
-	cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=200, crit='maxclust', dist = True, corr = True) #true, true
-	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 20)
-	cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster,coords), stacks, threshold = 1, crit='inconsistent', dist = True, corr = False) #true, false
-	cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster,coords), stacks, threshold = 1, crit = 'inconsistent', dist = True, corr = True) #true, true
-	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 100)
-	print(len(stacks))
-	print(len(coords))
-
-	return
-
 # Stacks current input data using an adaptive stacking routine
 
 def adaptive_stack():
@@ -213,13 +208,13 @@ def adaptive_stack():
 	
 	cut_length = round(len(seis_data)/10)
 	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-	#print_out(cluster, coords, stacks, 'adaptive_first_stack')
-	#cluster, stacks, coords, seis_data = read_in(14, 11865, 1000, 'adaptive_first_stack')
-	cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, 10)
+	print_out('adaptive_first_stack')
+	#read_in(1930, 19292, 1000, 'adaptive_first_stack')
+	remove_anoms(5)
 	while len(stacks) > 25:
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
-		cluster, stacks, coords, seis_data = remove_anoms(cluster, stacks, coords, seis_data, round(average_stack_size(cluster)/3))
+		remove_anoms(round(average_stack_size()/4))
 	print(len(stacks))
 	print(len(coords))
 
@@ -266,6 +261,9 @@ depths = np.array(depths[cut_index_1:cut_index_2])
 seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
 stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
 cluster = range(1, len(seis_data)+1)
+
+adaptive_stack()
+plot('test', True)
 
 #cluster1, stacks1, coords1 = read_in(12, 10723, 1000, 'test')
 #cluster2, stacks2, coords2 = read_in(8, 8082, 1000, 'adapt_remove_3000')
