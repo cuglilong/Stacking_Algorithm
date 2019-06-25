@@ -35,7 +35,7 @@ def print_out(filename):
 		for s in stack:
 			file.write(str(s) + ', ')
 		count += 1
-		if (count != len(stacks)):
+		if (count != len(stacks)+1):
 			file.write('\n')
 	file.close()
 	
@@ -46,7 +46,7 @@ def print_out(filename):
 	for coord in coords:
 		file1.write(str(coord[0])+', '+ str(coord[1]))
 		count +=1
-		if (count != len(stacks)):
+		if (count != len(coords)+1):
 			file1.write('\n')
 	file1.close()
 
@@ -83,7 +83,7 @@ def read_in(no_stacks, no_coords, len_data, filename):
 		csv_reader_1 = csv.reader(csv_file_1, delimiter=',')
 		line_count = 0
 		for row in csv_reader_1:
-			coords[line_count] = np.array(row[:-1]).astype(float)
+			coords[line_count] = np.array(row).astype(float)
 			line_count += 1
 
 	return
@@ -118,8 +118,7 @@ def remove_anoms(size):
 	for c in cluster_set:
 		cluster[np.where(cluster==c)[0]] = count
 		count += 1
-	print(np.max(cluster))
-	print(stacks.shape)
+	
 	return
 
 # Compare results of cluster stacking to results of CCP stacking,
@@ -206,15 +205,18 @@ def adaptive_stack():
 	global cluster, stacks, coords, seis_data
 	print("Stacking...")
 	
-	cut_length = round(len(seis_data)/10)
-	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-	print_out('adaptive_first_stack')
-	#read_in(1930, 19292, 1000, 'adaptive_first_stack')
+	#cut_length = round(len(seis_data)/10)
+	#cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+	#print_out('adaptive_first_stack')
+	read_in(1929, 19292, 1000, 'adaptive_first_stack')
+	print(stacks.shape)
 	remove_anoms(5)
+	print(stacks.shape)
 	while len(stacks) > 25:
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
-		remove_anoms(round(average_stack_size()/4))
+		print(stacks.shape)
+		remove_anoms(round(average_stack_size()/3))
 	print(len(stacks))
 	print(len(coords))
 
@@ -232,7 +234,7 @@ def plot(filename, indiv):
 	os.chdir(filename)
 	ps.plot(stacks, depths, cluster, coords, seis_data, filename, anomal = True, plot_individual = indiv)
 	#ps.temp_plot(cluster, stacks, coords, depths, filename+'_temps')
-	#ps.MTZ_plot(cluster, stacks, coords, depths, 'test_MTZ')
+	ps.MTZ_plot(cluster, stacks, coords, depths, filename + '_MTZ')
 	#ps.var_plot(cluster, stacks, coords, depths, 'test_var')
 	#compare_methods(cluster, stacks, coords, seis_data, 'default_compare')
 
