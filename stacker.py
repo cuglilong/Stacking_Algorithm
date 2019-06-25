@@ -205,10 +205,10 @@ def adaptive_stack():
 	global cluster, stacks, coords, seis_data
 	print("Stacking...")
 	
-	#cut_length = round(len(seis_data)/10)
-	#cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-	#print_out('adaptive_first_stack')
-	read_in(1929, 19292, 1000, 'adaptive_first_stack')
+	cut_length = round(len(seis_data)/10)
+	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+	print_out('deep_first_stack')
+	#read_in(1929, 19292, 1000, 'adaptive_first_stack')
 	print(stacks.shape)
 	remove_anoms(5)
 	print(stacks.shape)
@@ -216,7 +216,7 @@ def adaptive_stack():
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
 		print(stacks.shape)
-		remove_anoms(round(average_stack_size()/3))
+		remove_anoms(round(average_stack_size()/4))
 	print(len(stacks))
 	print(len(coords))
 
@@ -234,8 +234,7 @@ def plot(filename, indiv):
 	os.chdir(filename)
 	ps.plot(stacks, depths, cluster, coords, seis_data, filename, anomal = True, plot_individual = indiv)
 	#ps.temp_plot(cluster, stacks, coords, depths, filename+'_temps')
-	ps.MTZ_plot(cluster, stacks, coords, depths, filename + '_MTZ')
-	#ps.var_plot(cluster, stacks, coords, depths, 'test_var')
+	#ps.MTZ_plot(cluster, stacks, coords, depths, filename + '_MTZ')
 	#compare_methods(cluster, stacks, coords, seis_data, 'default_compare')
 
 	return 
@@ -254,7 +253,7 @@ locs = np.array([t.stats.piercepoints['P410s']['410'] for t in seis]).astype(flo
 coords = np.array([(l[1], l[2]) for l in locs])
 depths = np.array(seis[0].stats.depth)
 
-min_depth = 280
+min_depth = 580
 max_depth = 780
 stacks = seis_data
 cut_index_1 = np.where(depths>min_depth)[0][0]
@@ -265,7 +264,7 @@ stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
 cluster = range(1, len(seis_data)+1)
 
 adaptive_stack()
-plot('test', True)
+plot('deep', True)
 
 #cluster1, stacks1, coords1 = read_in(12, 10723, 1000, 'test')
 #cluster2, stacks2, coords2 = read_in(8, 8082, 1000, 'adapt_remove_3000')
