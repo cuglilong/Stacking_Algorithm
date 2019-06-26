@@ -22,11 +22,11 @@ import plot_CCP
 
 # Write out cluster and stacks to a csv
 
-def print_out(filename):
+def print_out(print_file):
 	
 	# Print out stacks and cluster
 	
-	file = open(filename, 'w')
+	file = open(print_file, 'w')
 	for c in cluster:
 		file.write(str(c) + ', ')
 	file.write('\n')
@@ -41,7 +41,7 @@ def print_out(filename):
 	
 	# Print out coordinates
 	
-	file1 = open(filename+'_coords', 'w')
+	file1 = open(print_file+'_coords', 'w')
 	count = 1
 	for coord in coords:
 		file1.write(str(coord[0])+', '+ str(coord[1]))
@@ -57,13 +57,13 @@ def print_out(filename):
 # no_coords = number of coordinates to read in
 # len_data = number of data points in a stack - eg, number of depth values
 
-def read_in(no_stacks, no_coords, len_data, filename):
+def read_in(no_stacks, no_coords, len_data, read_file):
 	
 	global cluster, stacks, coords
 	
 	# Reading in cluster and stack data
 	
-	with open(filename) as csv_file:
+	with open(read_file) as csv_file:
 		stacks = np.zeros((no_stacks, len_data))
 		csv_reader = csv.reader(csv_file, delimiter=',')
 		line_count = 0
@@ -78,7 +78,7 @@ def read_in(no_stacks, no_coords, len_data, filename):
 	
 	# Reading in coordinate data
 	
-	with open(filename+'_coords') as csv_file_1:
+	with open(read_file+'_coords') as csv_file_1:
 		coords = np.zeros((no_coords, 2))
 		csv_reader_1 = csv.reader(csv_file_1, delimiter=',')
 		line_count = 0
@@ -202,21 +202,19 @@ def average_stack_size():
 
 def adaptive_stack():
 	
-	global cluster, stacks, coords, seis_data
+	global cluster, stacks, coords, seis_data, filename
 	print("Stacking...")
 	
 	cut_length = round(len(seis_data)/10)
 	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-	print_out('deep_first_stack')
+	#print_out('prem_first_stack')
 	#read_in(1929, 19292, 1000, 'adaptive_first_stack')
-	print(stacks.shape)
 	remove_anoms(5)
-	print(stacks.shape)
-	while len(stacks) > 25:
+	while len(stacks) > 30:
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
-		print(stacks.shape)
 		remove_anoms(round(average_stack_size()/4))
+	print_out(filename +'_final')
 	print(len(stacks))
 	print(len(coords))
 
@@ -225,23 +223,27 @@ def adaptive_stack():
 # Plots current stacks and other graphsand saves in directory of name filename
 # Indiv = boolean variable, if true then plot individual stacks, otherise don't
 
-def plot(filename, indiv):
+def plot(indiv):
 	
-	global cluster, coords, stacks, seis_data
+	global cluster, coords, stacks, seis_data, filename
 	print("Plotting...")
 	
 	os.mkdir(filename)
 	os.chdir(filename)
 	ps.plot(stacks, depths, cluster, coords, seis_data, filename, anomal = True, plot_individual = indiv)
+	#ps.depth_plot(cluster, stacks, coords, depths, 630, 700, filename+'_depths')
 	#ps.temp_plot(cluster, stacks, coords, depths, filename+'_temps')
-	#ps.MTZ_plot(cluster, stacks, coords, depths, filename + '_MTZ')
+	ps.MTZ_plot(cluster, stacks, coords, depths, filename + '_MTZ')
 	#compare_methods(cluster, stacks, coords, seis_data, 'default_compare')
 
-	return 
+	return
 
 # Start program - reading in
 
 file =sys.argv[1]
+filename =sys.argv[2]
+min_depth =float(sys.argv[3])
+max_depth =float(sys.argv[4])
 print("Reading " + file + "...")
 seis = read(file,format='PICKLE')
 print(len(seis))
@@ -253,8 +255,6 @@ locs = np.array([t.stats.piercepoints['P410s']['410'] for t in seis]).astype(flo
 coords = np.array([(l[1], l[2]) for l in locs])
 depths = np.array(seis[0].stats.depth)
 
-min_depth = 580
-max_depth = 780
 stacks = seis_data
 cut_index_1 = np.where(depths>min_depth)[0][0]
 cut_index_2 = np.where(depths>max_depth)[0][0]
@@ -264,7 +264,7 @@ stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
 cluster = range(1, len(seis_data)+1)
 
 adaptive_stack()
-plot('deep', True)
+plot(True)
 
 #cluster1, stacks1, coords1 = read_in(12, 10723, 1000, 'test')
 #cluster2, stacks2, coords2 = read_in(8, 8082, 1000, 'adapt_remove_3000')
