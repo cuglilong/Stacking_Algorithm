@@ -157,12 +157,12 @@ def adaptive_stack():
 	print("Stacking...")
 	
 	cut_length = round(len(seis_data)/10)
-	print(round(len(seis_data)/10))
 	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-	print_out('default_first_stack')
-	#read_in(1929, 19292, 1000, 'adaptive_first_stack')
+	print_out('new_data_first_stack')
+	#read_in(786, 7855, 1500, 'new_data_first_stack')
 	remove_anoms(5)
-	while len(stacks) > 30:
+	while len(stacks) > 40:
+		print(len(stacks))
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 		remove_anoms(round(average_stack_size()/4))
 	print_out(filename +'_final')
@@ -206,6 +206,7 @@ stacks = seis_data
 cut_index_1 = np.where(times>min_time)[0][0]
 cut_index_2 = np.where(times>max_time)[0][0]
 times = np.array(times[cut_index_1:cut_index_2])
+print(len(times))
 seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
 stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
 cluster = range(1, len(seis_data)+1)
