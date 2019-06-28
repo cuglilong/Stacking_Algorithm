@@ -207,12 +207,11 @@ def adaptive_stack():
 	
 	cut_length = round(len(seis_data)/10)
 	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-	#print_out('prem_first_stack')
+	#print_out('default_first_stack')
 	#read_in(1929, 19292, 1000, 'adaptive_first_stack')
 	remove_anoms(5)
 	while len(stacks) > 30:
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
-		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
 		remove_anoms(round(average_stack_size()/4))
 	print_out(filename +'_final')
 	print(len(stacks))
