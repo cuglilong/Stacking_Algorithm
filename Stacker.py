@@ -170,12 +170,13 @@ class Stacker:
 		
 		print("Stacking...")
 		
-		cut_length = round(len(self.seis_data)/10)
-		self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-		#self.read_in(786, 7855, 1500, 'new_data_first_stack')
+		#cut_length = round(len(self.seis_data)/10)
+		#self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+		self.read_in(1929, 19292, 1040, 'default_first_stack')
 		self.remove_anoms(5)
-		while len(self.stacks) > 30:
+		while len(self.stacks) > 35:
 			self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
+			self.remove_anoms(round(self.average_stack_size()/4), variance=True)
 			self.remove_anoms(round(self.average_stack_size()/4))
 		print(len(self.stacks))
 		print(len(self.coords))
@@ -192,6 +193,8 @@ class Stacker:
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
 		ps.plot(self.stacks, self.x_var, self.cluster, self.coords, self.seis_data, self.filename, anomal = anomalies, plot_individual = indiv)
+		ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.depths, self.filename+'_MTZ')
+
 		return
 
 	cluster = np.array([])

@@ -206,15 +206,14 @@ def adaptive_stack():
 	global cluster, stacks, coords, seis_data, filename
 	print("Stacking...")
 	
-	cut_length = round(len(seis_data)/10)
-	cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+	#cut_length = round(len(seis_data)/10)
+	#cluster, stacks = cs.second_cluster(cluster, coords, stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
 	#print_out('default_first_stack')
-	#read_in(1929, 19292, 1000, 'adaptive_first_stack')
+	read_in(1929, 19292, 1040, 'default_first_stack')
 	remove_anoms(5)
-	while len(stacks) > 35:
+	while len(stacks) > 45:
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 		remove_anoms(round(average_stack_size()/4))
-	print_out(filename +'_final')
 	print(len(stacks))
 	print(len(coords))
 
@@ -242,8 +241,8 @@ def plot(indiv):
 
 file =sys.argv[1]
 filename =sys.argv[2]
-min_depth =float(sys.argv[3])
-max_depth =float(sys.argv[4])
+min_depth =280
+max_depth =780
 print("Reading " + file + "...")
 seis = read(file,format='PICKLE')
 print(len(seis))
@@ -256,17 +255,17 @@ coords = np.array([(l[1], l[2]) for l in locs])
 depths = np.array(seis[0].stats.depth)
 
 stacks = seis_data
-cut_index_1 = np.where(depths>min_depth)[0][0]
-cut_index_2 = np.where(depths>max_depth)[0][0]
-depths = np.array(depths[cut_index_1:cut_index_2])
-seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
-stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
+#cut_index_1 = np.where(depths>min_depth)[0][0]
+#cut_index_2 = np.where(depths>max_depth)[0][0]
+#depths = np.array(depths[cut_index_1:cut_index_2])
+#seis_data = np.array([seis[cut_index_1:cut_index_2] for seis in seis_data])
+#stacks = np.array([stack[cut_index_1:cut_index_2] for stack in stacks])
 cluster = range(1, len(seis_data)+1)
 
 adaptive_stack()
 plot(True)
 a=0
-for cl in range(1, np.max(cluster)):
+for cl in range(1, np.max(cluster)+1):
         b = c_v(cluster, cl, seis_data)
         print(b)
         a+=b

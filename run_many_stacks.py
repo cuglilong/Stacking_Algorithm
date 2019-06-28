@@ -35,9 +35,9 @@ times = np.array(seis['Time'])
 stacks1 = seis_data1
 stacks2 = seis_data2
 
-s1 = Stacker.Stacker(depths, coords1, seis_data1, 'test1')
-s2 = Stacker.Stacker(times, coords2, seis_data2, 'test2')
+s1 = Stacker.Stacker(depths, coords1, seis_data1, 'test3')
+#s2 = Stacker.Stacker(times, coords2, seis_data2, 'test2')
 s1.adaptive_stack()
-s2.adaptive_stack()
+#s2.adaptive_stack()
 s1.plot()
-s2.plot()
+#s2.plot()
