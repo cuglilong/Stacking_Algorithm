@@ -98,6 +98,7 @@ class Stacker:
 		remove_cluster = np.array([])
 		for c in np.arange(1, np.max(self.cluster)+1):
 			a = np.where(self.cluster == c)[0]
+			
 			if (len(a) < stack_size):
 				to_remove = np.append(to_remove, [c-1], axis=0)
 				remove_cluster = np.append(remove_cluster, a, axis=0)
@@ -137,13 +138,23 @@ class Stacker:
 		print(rand_index)
 		return rand_index
 
-	# Returns average size of stack in current cluster
+	# Returns average size of stack in current cluster conformation
 
 	def average_stack_size(self):
 		
 		avg = np.average([len(np.where(self.cluster == i)[0]) for i in np.unique(self.cluster)])
 		
 		return avg
+	
+	# Returns average cluster variance of a stack in current cluster conformation
+	
+	def average_cluster_variance(self):
+		
+		for cl in range(1, np.max(self.cluster)):
+			b = c_v(self.cluster, cl, self.seis_data)
+			a+=b
+		
+		return(a/np.max(cluster))
 	
 	# Stacks current input data using an adaptive stacking routine
 	
