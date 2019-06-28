@@ -19,6 +19,7 @@ from mpl_toolkits.basemap import Basemap
 import csv
 import rand_score
 import plot_CCP
+from cluster_variation import c_v
 
 # Write out cluster and stacks to a csv
 
@@ -210,7 +211,7 @@ def adaptive_stack():
 	#print_out('default_first_stack')
 	#read_in(1929, 19292, 1000, 'adaptive_first_stack')
 	remove_anoms(5)
-	while len(stacks) > 30:
+	while len(stacks) > 35:
 		cluster, stacks = cs.second_cluster(cluster, cs.stack_coords(cluster, coords), stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 		remove_anoms(round(average_stack_size()/4))
 	print_out(filename +'_final')
@@ -264,6 +265,12 @@ cluster = range(1, len(seis_data)+1)
 
 adaptive_stack()
 plot(True)
+a=0
+for cl in range(1, np.max(cluster)):
+        b = c_v(cluster, cl, seis_data)
+        print(b)
+        a+=b
+print(a/np.max(cluster))
 
 #cluster1, stacks1, coords1 = read_in(12, 10723, 1000, 'test')
 #cluster2, stacks2, coords2 = read_in(8, 8082, 1000, 'adapt_remove_3000')

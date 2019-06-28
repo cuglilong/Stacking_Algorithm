@@ -18,6 +18,7 @@ import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
 import csv
 import rand_score
+from cluster_variation import c_v
 import plot_CCP
 
 class Stacker:
@@ -90,18 +91,24 @@ class Stacker:
 
 	# Remove all stacks containing fewer data points than a given size from the clusterer
 
-	def remove_anoms(self, stack_size):
+	def remove_anoms(self, stack_size, variance=False):
 		
 		# Making list of those to remove
 		
 		to_remove = np.array([])
 		remove_cluster = np.array([])
+		average_var = self.average_cluster_variance()
 		for c in np.arange(1, np.max(self.cluster)+1):
 			a = np.where(self.cluster == c)[0]
-			
-			if (len(a) < stack_size):
-				to_remove = np.append(to_remove, [c-1], axis=0)
-				remove_cluster = np.append(remove_cluster, a, axis=0)
+			if variance == True:
+				b = c_v(self.cluster, c, self.seis_data)
+				if b > average_var*3:
+					to_remove = np.append(to_remove, [c-1], axis=0)
+					remove_cluster = np.append(remove_cluster, a, axis=0)
+			else:
+				if (len(a) < stack_size):
+					to_remove = np.append(to_remove, [c-1], axis=0)
+					remove_cluster = np.append(remove_cluster, a, axis=0)
 		
 		# Removing all anomalies
 		
@@ -150,11 +157,12 @@ class Stacker:
 	
 	def average_cluster_variance(self):
 		
+		a = 0
 		for cl in range(1, np.max(self.cluster)):
 			b = c_v(self.cluster, cl, self.seis_data)
 			a+=b
 		
-		return(a/np.max(cluster))
+		return(a/np.max(self.cluster))
 	
 	# Stacks current input data using an adaptive stacking routine
 	
@@ -164,6 +172,7 @@ class Stacker:
 		
 		cut_length = round(len(self.seis_data)/10)
 		self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+		#self.read_in(786, 7855, 1500, 'new_data_first_stack')
 		self.remove_anoms(5)
 		while len(self.stacks) > 30:
 			self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
