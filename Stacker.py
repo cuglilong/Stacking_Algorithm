@@ -91,22 +91,24 @@ class Stacker:
 
 	# Remove all stacks containing fewer data points than a given size from the clusterer
 
-	def remove_anoms(self, stack_size, variance=False):
+	def remove_anoms(self, anom_threshold, variance=False):
 		
 		# Making list of those to remove
 		
 		to_remove = np.array([])
 		remove_cluster = np.array([])
-		average_var = self.average_cluster_variance()
+
 		for c in np.arange(1, np.max(self.cluster)+1):
 			a = np.where(self.cluster == c)[0]
 			if variance == True:
 				b = c_v(self.cluster, c, self.seis_data)
-				if b > average_var*3:
+				print(b)
+				print(c)
+				if b > anom_threshold:
 					to_remove = np.append(to_remove, [c-1], axis=0)
 					remove_cluster = np.append(remove_cluster, a, axis=0)
 			else:
-				if (len(a) < stack_size):
+				if (len(a) < anom_threshold):
 					to_remove = np.append(to_remove, [c-1], axis=0)
 					remove_cluster = np.append(remove_cluster, a, axis=0)
 		
@@ -136,7 +138,7 @@ class Stacker:
 		isin2 = np.isin(comp, coords2)
 		compare1 = np.zeros(len(both_coords))
 		compare2 = np.zeros(len(both_coords))
-		for x in range(0, len(both_coords)-1):
+		for x in range(0, len(both_coords)):
 			if isin1[x].all():
 				compare1[x] = cluster1[np.where(coords1 == both_coords[x])[0][0]]
 			if isin2[x].all():
@@ -158,7 +160,7 @@ class Stacker:
 	def average_cluster_variance(self):
 		
 		a = 0
-		for cl in range(1, np.max(self.cluster)):
+		for cl in np.arange(1, int(np.max(self.cluster))+1):
 			b = c_v(self.cluster, cl, self.seis_data)
 			a+=b
 		
@@ -166,7 +168,7 @@ class Stacker:
 	
 	# Stacks current input data using an adaptive stacking routine
 	
-	def adaptive_stack(self):
+	def adaptive_stack(self, geographical = False):
 		
 		print("Stacking...")
 		
@@ -174,13 +176,16 @@ class Stacker:
 		#self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
 		self.read_in(1929, 19292, 1040, 'default_first_stack')
 		self.remove_anoms(5)
-		while len(self.stacks) > 35:
-			self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
-			self.remove_anoms(round(self.average_stack_size()/4), variance=True)
+		while len(self.stacks) > 40:
+			if geographical == True:
+				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
+			else:
+				print(self.stacks.shape)
+				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
+			self.remove_anoms(self.average_cluster_variance()*2, variance=True)
 			self.remove_anoms(round(self.average_stack_size()/4))
 		print(len(self.stacks))
-		print(len(self.coords))
-	
+		print(len(self.coords)) 
 		return 
 
 	# Plots current stacks and other graphsand saves in directory of name filename
@@ -193,7 +198,7 @@ class Stacker:
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
 		ps.plot(self.stacks, self.x_var, self.cluster, self.coords, self.seis_data, self.filename, anomal = anomalies, plot_individual = indiv)
-		ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.depths, self.filename+'_MTZ')
+		ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_MTZ')
 
 		return
 
@@ -212,5 +217,5 @@ class Stacker:
 		self.seis_data = seis_data
 		self.filename = filename
 		self.stacks = seis_data
-		self.cluster = range(1, len(seis_data)+1)
+		self.cluster = np.arange(1, len(seis_data)+1)
 
