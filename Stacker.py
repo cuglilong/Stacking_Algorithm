@@ -102,8 +102,6 @@ class Stacker:
 			a = np.where(self.cluster == c)[0]
 			if variance == True:
 				b = c_v(self.cluster, c, self.seis_data)
-				print(b)
-				print(c)
 				if b > anom_threshold:
 					to_remove = np.append(to_remove, [c-1], axis=0)
 					remove_cluster = np.append(remove_cluster, a, axis=0)
@@ -199,6 +197,7 @@ class Stacker:
 		os.chdir(self.filename)
 		ps.plot(self.stacks, self.x_var, self.cluster, self.coords, self.seis_data, self.filename, anomal = anomalies, plot_individual = indiv)
 		ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_MTZ')
+		os.chdir('..')
 
 		return
 
