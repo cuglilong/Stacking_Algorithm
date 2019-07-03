@@ -186,6 +186,7 @@ def temp_plot(cluster, stacks, coords, depths, figname):
 	cb = axes.scatter(lon, lat, c=coord_temps, marker='x', cmap=plt.cm.get_cmap('cool'))
 	fig.colorbar(cb, ax=axes, label="Temperature (K)")
 	fig.savefig(figname)
+	fig.clear()
 
 	return
 
