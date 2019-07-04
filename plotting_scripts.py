@@ -6,6 +6,7 @@ from math import sin, cos, sqrt, atan2, pi
 import random
 import numpy as np
 import scipy as sp
+import cluster_variation as c_v
 import scipy.cluster.hierarchy as cluster
 import mpl_toolkits
 import mpl_toolkits.basemap
@@ -122,7 +123,9 @@ def depth_plot(cluster, stacks, coords, depths, min_depth, max_depth, figname):
 	cb = axes.scatter(lon, lat, c=coord_depths, marker='x', cmap=plt.cm.get_cmap('cool'))
 	fig.colorbar(cb, ax=axes)
 	fig.savefig(figname)
+	fig.clear()
 
+	return
 # Plots thickness of MTZ as colormap
 
 def MTZ_plot(cluster, stacks, coords, depths, figname):
@@ -154,6 +157,7 @@ def MTZ_plot(cluster, stacks, coords, depths, figname):
 	fig.colorbar(cb, ax=axes)
 	plt.grid()
 	fig.savefig(figname)
+	fig.clear()
 
 	return
 
@@ -170,7 +174,7 @@ def temp_plot(cluster, stacks, coords, depths, figname):
 	cropped_depths_2 = depths[cut_index_3:cut_index_4]
 	cropped_stacks_2 = [stack[cut_index_3:cut_index_4] for stack in stacks]
 	signal_depths_1 = [cropped_depths_1[np.argmax(stack)] for stack in cropped_stacks_1]
-	signal_depths_2 = [cropped_depths_2[np.argmax(stack)] for stack in  cropped_stacks_2]
+	signal_depths_2 = [cropped_depths_2[np.argmax(stack)] for stack in cropped_stacks_2]
 	MTZ_widths = [j - i for i, j in np.stack((signal_depths_1, signal_depths_2), axis = -1)]
 	temps = [3600-8*depth for depth in MTZ_widths]
 	coord_temps = [temps[cluster[i]-1] for i in range(len(coords))]
@@ -199,7 +203,7 @@ def var_plot(cluster, stacks, coords, seis_data, figname):
 	count = 1
 	for stack in stacks:
 		orig = seis_data[np.where(cluster==count)[0]]
-		vars[count-1] = group_corr(orig, stack)
+		vars[count-1] = c_v(cluster, count, seis_data)
 		count += 1
 	coord_vars = [vars[cluster[i]-1] for i in range(len(coords))]
 	
@@ -214,5 +218,63 @@ def var_plot(cluster, stacks, coords, seis_data, figname):
 	cb = axes.scatter(lon, lat, c=coord_vars, marker='x', cmap=plt.cm.get_cmap('cool'))
 	fig.colorbar(cb, ax=axes)
 	fig.savefig(figname)
+	fig.clear()
 
 	return
+
+
+def sign_plot(cluster, stacks, coords, seis_data, figname):
+	
+	# Find cluster variances
+	
+	signs = np.zeros(len(stacks))
+	count = 0
+	for stack in stacks:
+		if stack[np.argmax(np.abs(stack))]>0:
+			signs[count]=1
+		else:
+			signs[count]=-1
+		count += 1
+	coord_signs = [signs[cluster[i]-1] for i in range(len(coords))]
+	
+	# Plot figure
+	
+	fig = plt.figure(1)
+	axes = plt.gca()
+	axes.set_xlabel('longitude')
+	axes.set_ylabel('latitude')
+	lon = [coords[i][1] for i in range(len(coords))]
+	lat = [coords[i][0] for i in range(len(coords))]
+	cb = axes.scatter(lon, lat, c=coord_signs, marker='x', cmap=plt.cm.get_cmap('cool'))
+	fig.colorbar(cb, ax=axes)
+	fig.savefig(figname)
+	fig.clear()
+	
+	return
+
+def mag_plot(cluster, stacks, coords, seis_data, figname):
+	
+	# Find cluster variances
+	
+	mags = np.zeros(len(stacks))
+	count = 0
+	for stack in stacks:
+		mags[count] = stack[np.argmax(np.abs(stack))]
+		count += 1
+	coord_mags = [mags[cluster[i]-1] for i in range(len(coords))]
+	
+	# Plot figure
+	
+	fig = plt.figure(1)
+	axes = plt.gca()
+	axes.set_xlabel('longitude')
+	axes.set_ylabel('latitude')
+	lon = [coords[i][1] for i in range(len(coords))]
+	lat = [coords[i][0] for i in range(len(coords))]
+	cb = axes.scatter(lon, lat, c=coord_mags, marker='x', cmap=plt.cm.get_cmap('cool'))
+	fig.colorbar(cb, ax=axes)
+	fig.savefig(figname)
+	fig.clear()
+	 
+	return
+

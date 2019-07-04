@@ -180,10 +180,9 @@ class Stacker:
 			else:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 			
-			print(self.average_cluster_variance())
 			self.remove_anoms(self.average_cluster_variance()*1.5, variance=True)
-			print(self.average_stack_size()/2.5)
 			self.remove_anoms(round(self.average_stack_size()/2.5))
+		self.print_out(self.filename+'_final')
 		return
 
 	# Plots current stacks and other graphsand saves in directory of name filename
@@ -196,8 +195,8 @@ class Stacker:
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
 		ps.plot(self.stacks, self.x_var, self.cluster, self.coords, self.seis_data, self.filename, anomal = anomalies, plot_individual = indiv)
-		#ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_MTZ')
-		ps.temp_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_temp')
+		ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_MTZ')
+		#ps.temp_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_temp')
 		os.chdir('..')
 
 		return
