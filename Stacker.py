@@ -117,7 +117,7 @@ class Stacker:
 		self.coords = np.delete(self.coords, remove_cluster.astype(int), axis=0)
 		self.seis_data = np.delete(self.seis_data, remove_cluster.astype(int), axis=0)
 		
-		# Rebuilding cluster
+		# Rebuilding clusters
 		
 		cluster_set = np.unique(self.cluster)
 		count = 1
@@ -125,9 +125,25 @@ class Stacker:
 			self.cluster[np.where(self.cluster==c)[0]] = count
 			count += 1
 		
+		# Rebuilding keep cluster to use as comparison to other clusters at the end
+		
+		i = 0
+		j = 0
+		for c in np.arange(len(self.cluster_keep)):
+			if (self.cluster_keep[c] == 0):
+				print('ji')
+			elif(np.isin(i, remove_cluster)):
+				self.cluster_keep[c]=0
+				i+=1
+			else:
+				self.cluster_keep[c]=self.cluster[j]
+				j+=1
+				i+=1
+		
 		return
-
-	def compare_cluster_similarity(coords1, cluster1, coords2, cluster2):
+	
+	
+	def compare_cluster_similarity(self, coords1, cluster1, coords2, cluster2):
 		
 		both_coords = np.append(coords1, coords2, axis=0)
 		both_coords = np.unique(both_coords, axis=0)
@@ -196,7 +212,6 @@ class Stacker:
 		os.chdir(self.filename)
 		ps.plot(self.stacks, self.x_var, self.cluster, self.coords, self.seis_data, self.filename, anomal = anomalies, plot_individual = indiv)
 		ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_MTZ')
-		#ps.temp_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_temp')
 		os.chdir('..')
 
 		return
@@ -206,6 +221,8 @@ class Stacker:
 	stacks = np.array([])
 	coords = np.array([])
 	x_var = np.array([])
+	cluster_keep = np.array([])
+	removed_points_last_iteration = np.array([])
 
 	# Class constructor
 
@@ -217,3 +234,4 @@ class Stacker:
 		self.filename = filename
 		self.stacks = seis_data
 		self.cluster = np.arange(1, len(seis_data)+1)
+		self.cluster_keep = np.arange(1, len(seis_data)+1)
