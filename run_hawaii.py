@@ -6,6 +6,7 @@ import pickle
 from itertools import zip_longest, permutations, repeat
 from scipy.misc import comb
 import numpy as np
+import plotting_scripts as ps
 
 # Reading in
 
@@ -41,12 +42,18 @@ s = np.array([Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_de
 
 for i in np.array([1, 2, 3]):
 	rand_remove = np.random.choice(range(len(seis_data)), 100, replace=False)
-	temp_data = np.delete(seis_data, rand_remove, axis=1)
-	print(coords.shape)
-	temp_coords = np.delete(coords, rand_remove, axis=1)
-	print(temp_coords.shape)
+	temp_data = np.delete(seis_data, rand_remove, axis=0)
+	temp_coords = np.delete(coords, rand_remove, axis=0)
+	temp_cluster_keep = np.arange(1, len(seis_data)+1)
+	temp_cluster_keep[rand_remove] = 0
 	ss = Hawaii_Stacker.Hawaii_Stacker(times, temp_coords, temp_data, 'test'+str(i))
-	np.append(s, ss)
-#for s in ss:
-#	s.adaptive_stack()
-#	s.plot()
+	ss.cluster_keep = temp_cluster_keep
+	s = np.append(s, ss)
+
+print(len(s))
+
+for test in s:
+	test.adaptive_stack()
+	test.plot()
+
+ps.cluster_vote_map(s)

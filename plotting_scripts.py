@@ -12,6 +12,7 @@ import mpl_toolkits
 import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
 from collections import Counter
+from itertools import combinations
 
 # Create map of western US to overlay location points on
 
@@ -337,4 +338,6 @@ def cluster_vote_map(final_clusters):
 	cb = axes.scatter(lon, lat, c=heat_map_coords, marker='x', cmap=plt.cm.get_cmap('cool'))
 	fig.colorbar(cb, ax=axes)
 	fig.savefig('test')
-
+	fig.clear()
+	
+	return
