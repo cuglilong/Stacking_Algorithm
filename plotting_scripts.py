@@ -126,6 +126,7 @@ def depth_plot(cluster, stacks, coords, depths, min_depth, max_depth, figname):
 	fig.clear()
 
 	return
+
 # Plots thickness of MTZ as colormap
 
 def MTZ_plot(cluster, stacks, coords, depths, figname):
@@ -252,11 +253,14 @@ def sign_plot(cluster, stacks, coords, seis_data, figname):
 	
 	return
 
-def mag_plot(cluster, stacks, coords, seis_data, figname):
+def mag_plot(cluster, stacks, coords, seis_data, times, figname):
 	
-	# Find cluster variances
+	# Find (signed) magnitude of largest peak after ScS
 	
 	mags = np.zeros(len(stacks))
+	cut1 = np.where(0<times)[0][0]
+	cut2 = np.where(5.5<times)[0][0]
+	stacks = np.array([stack[cut1:cut2] for stack in stacks])
 	count = 0
 	for stack in stacks:
 		mags[count] = stack[np.argmax(np.abs(stack))]
@@ -272,9 +276,65 @@ def mag_plot(cluster, stacks, coords, seis_data, figname):
 	lon = [coords[i][1] for i in range(len(coords))]
 	lat = [coords[i][0] for i in range(len(coords))]
 	cb = axes.scatter(lon, lat, c=coord_mags, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
+	fig.colorbar(cb, ax=axes, label = 'Peak Amplitude')
 	fig.savefig(figname)
 	fig.clear()
 	 
 	return
+
+def peak_dist_plot(cluster, stacks, coords, seis_data, figname):
+	
+	# Find cluster variances
+	
+	peak_dist = np.zeros(len(stacks))
+	count = 0
+	for stack in stacks:
+		peak_dist[count] = np.argmax(np.abs(stack))
+		count += 1
+	coord_peak_dist = [peak_dist[cluster[i]-1] for i in range(len(coords))]
+	
+	# Plot figure
+	
+	fig = plt.figure(1)
+	axes = plt.gca()
+	axes.set_xlabel('longitude')
+	axes.set_ylabel('latitude')
+	lon = [coords[i][1] for i in range(len(coords))]
+	lat = [coords[i][0] for i in range(len(coords))]
+	cb = axes.scatter(lon, lat, c=coord_peak_dist, marker='x', cmap=plt.cm.get_cmap('cool'))
+	fig.colorbar(cb, ax=axes)
+	fig.savefig(figname)
+	fig.clear()
+	
+	return
+
+def cluster_vote_map(final_clusters):
+	coords = final_clusters[0].coords
+	data_range = range(len(final_clusters[0].seis_data))
+	heat_map = [0 for i in combinations(data_range, 2)]
+	count = 0
+	for c, d in combinations(data_range,2):
+		for a, b in combinations(final_clusters, 2):
+			c1 = a.cluster_keep
+			c2 = b.cluster_keep
+			if (c1[c] == c1[d] and c2[c] == c2[d]):
+				heat_map[count] += 1
+			elif (c1[c] != c1[d] and c2[c] != c2[d]):
+				heat_map[count] += 1
+		count+=1
+	heat_map_coords = np.zeros(len(data_range))
+	count=0
+	for i,j in combinations(data_range,2):
+		heat_map_coords[i] += heat_map[count]
+		heat_map_coords[j] += heat_map[count]
+		count+=1
+	fig = plt.figure(1)
+	axes = plt.gca()
+	axes.set_xlabel('longitude')
+	axes.set_ylabel('latitude')
+	lon = [coords[i][1] for i in range(len(coords))]
+	lat = [coords[i][0] for i in range(len(coords))]
+	cb = axes.scatter(lon, lat, c=heat_map_coords, marker='x', cmap=plt.cm.get_cmap('cool'))
+	fig.colorbar(cb, ax=axes)
+	fig.savefig('test')
 

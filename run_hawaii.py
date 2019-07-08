@@ -3,8 +3,8 @@ import Hawaii_Stacker
 import sys
 from obspy import read
 import pickle
-from itertools import zip_longest
-
+from itertools import zip_longest, permutations, repeat
+from scipy.misc import comb
 import numpy as np
 
 # Reading in
@@ -34,12 +34,19 @@ times = times[cut_2:cut_3]
 
 seis_data1 = -1*np.flip(seis_data1, axis=1)
 seis_data = np.array([[j+k for j, k in zip_longest(seis_data1[i], seis_data2[i], fillvalue=0)] for i in range(len(seis_data1))])
-stacks = seis_data
 
-s1 = Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_default')
-s2 = Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_geo')
-s1.adaptive_stack()
-s1.plot()
-s2.adaptive_stack(geographical=True)
-s2.plot()
+# Generating array of test cases
 
+s = np.array([Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_default')])
+
+for i in np.array([1, 2, 3]):
+	rand_remove = np.random.choice(range(len(seis_data)), 100, replace=False)
+	temp_data = np.delete(seis_data, rand_remove, axis=1)
+	print(coords.shape)
+	temp_coords = np.delete(coords, rand_remove, axis=1)
+	print(temp_coords.shape)
+	ss = Hawaii_Stacker.Hawaii_Stacker(times, temp_coords, temp_data, 'test'+str(i))
+	np.append(s, ss)
+#for s in ss:
+#	s.adaptive_stack()
+#	s.plot()
