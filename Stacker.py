@@ -131,7 +131,7 @@ class Stacker:
 		j = 0
 		for c in np.arange(len(self.cluster_keep)):
 			if (self.cluster_keep[c] == 0):
-				print('ji')
+				pass
 			elif(np.isin(i, remove_cluster)):
 				self.cluster_keep[c]=0
 				i+=1
@@ -141,25 +141,6 @@ class Stacker:
 				i+=1
 		
 		return
-	
-	
-	def compare_cluster_similarity(self, coords1, cluster1, coords2, cluster2):
-		
-		both_coords = np.append(coords1, coords2, axis=0)
-		both_coords = np.unique(both_coords, axis=0)
-		comp = both_coords
-		isin1 = np.isin(comp, coords1)
-		isin2 = np.isin(comp, coords2)
-		compare1 = np.zeros(len(both_coords))
-		compare2 = np.zeros(len(both_coords))
-		for x in range(0, len(both_coords)):
-			if isin1[x].all():
-				compare1[x] = cluster1[np.where(coords1 == both_coords[x])[0][0]]
-			if isin2[x].all():
-				compare2[x] = cluster2[np.where(coords2 == both_coords[x])[0][0]]
-		rand_index = rand_score.rand_index_score(compare1.astype(int), compare2.astype(int))
-		print(rand_index)
-		return rand_index
 
 	# Returns average size of stack in current cluster conformation
 
