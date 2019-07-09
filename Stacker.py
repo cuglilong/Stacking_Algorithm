@@ -167,9 +167,11 @@ class Stacker:
 		
 		print("Stacking...")
 		
-		cut_length = round(len(self.seis_data)/10)
-		self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-		#self.read_in(1929, 19292, 1040, 'default_first_stack')
+		#cut_length = round(len(self.seis_data)/10)
+		#self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+		self.read_in(3847, 38468, 1040, 'large_data_stack')
+		#self.print_out('large_data_stack')
+		print(self.stacks.shape)
 		self.remove_anoms(5)
 		while len(self.stacks) > 35:
 			if geographical == True:
@@ -178,21 +180,20 @@ class Stacker:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 			
 			self.remove_anoms(self.average_cluster_variance()*1.5, variance=True)
-			self.remove_anoms(round(self.average_stack_size()/2.5))
-		self.print_out(self.filename+'_final')
+			self.remove_anoms(round(self.average_stack_size()/3))
 		return
 
 	# Plots current stacks and other graphsand saves in directory of name filename
 	# Indiv = boolean variable, if true then plot individual stacks, otherise don't
 	
-	def plot(self, indiv=True, anomalies = True):
+	def plot(self, indiv=True):
 	
 		print("Plotting...")
 		
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
-		ps.plot(self.stacks, self.x_var, self.cluster, self.coords, self.seis_data, self.filename, anomal = anomalies, plot_individual = indiv)
-		ps.MTZ_plot(self.cluster, self.stacks, self.coords, self.x_var, self.filename+'_MTZ')
+		ps.plot(self, plot_individual=indiv)
+		ps.MTZ_plot(self, self.filename+'_MTZ')
 		os.chdir('..')
 
 		return
@@ -203,7 +204,6 @@ class Stacker:
 	coords = np.array([])
 	x_var = np.array([])
 	cluster_keep = np.array([])
-	removed_points_last_iteration = np.array([])
 
 	# Class constructor
 
