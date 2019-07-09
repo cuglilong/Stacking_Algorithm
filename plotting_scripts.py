@@ -26,19 +26,19 @@ def create_map(lon, lat):
 	return m
 
 # Plots final stacks with and cluster locations.
-# anomal - if false, exclude all stacks with less than 400 data points for clarity
+# Input: a stacker_object and figname
 # plot_indiviudal - if true, plots every individual stack in its own figure
 
-def plot(stacks, depths, cluster, coords, seis_data, figname, anomal=True, plot_individual = False):
+def plot(s_o, figname, plot_individual = False):
 	
 	# Creating a random set of colours to distinguish between different clusters
 	
 	colours = []
-	for i in range(1, np.max(cluster).astype(int) +1):
+	for i in range(1, np.max(s_0.cluster).astype(int) +1):
 		a = '%06X' % randint(0, 0xFFFFFF)
 		b = '#' + a
 		colours.append(b)
-	colour_clusters = [colours[(cluster[j]-1)] for j in range(len(cluster))]
+	colour_clusters = [colours[(s_o.cluster[j]-1)] for j in range(len(s_o.cluster))]
 	
 	# Initialising figure
 	
@@ -46,37 +46,33 @@ def plot(stacks, depths, cluster, coords, seis_data, figname, anomal=True, plot_
 	fig, axes = plt.subplots(1,2)
 	ax1 = axes[0]
 	ax2 = axes[1]
-	lons = np.array([co[1] for co in coords])
-	lats = np.array([co[0] for co in coords])
+	lons = np.array([co[1] for co in s_o.coords])
+	lats = np.array([co[0] for co in s_o.coords])
 	# Plotting individual stacks, if plot_individual is true
 	
 	if plot_individual == True:
 		count = 0
-		for stack in stacks:
-			if (anomal == False and len(np.where(cluster == count+1)[0])<400):
-				count+=1
-			else:
-				
-				ax1.set_xlabel('depth (km)')
-				ax1.set_ylabel('amplitude relative to main P wave')
-				ax1.plot(depths, stack, color = colours[count])
-				
-				ax2.set_xlabel('longitude')
-				ax2.set_ylabel('latitude')
-				m = create_map(lons, lats)
-				inds = np.where(cluster == count+1)[0]
-				avg_lon = np.average([coords[i][1] for i in inds])
-				avg_lat = np.average([coords[i][0] for i in inds])
-				avg_lon1, avg_lat1 = m(avg_lon, avg_lat)
-				for i in inds:
-					lon, lat = m(coords[i][1], coords[i][0])
-					m.plot(lon, lat, marker='x', markeredgecolor = colour_clusters[i])
-				m.plot(avg_lon1, avg_lat1, marker='x', markersize=7, markeredgecolor='black', LineStyle='None', label=str(avg_lat) + ', ' + str(avg_lon))
-				count+=1
-				ax2.legend()
-				fig.savefig(figname + str(count))
-				ax1.clear()
-				ax2.clear()
+		for stack in s_o.stacks:
+			ax1.set_xlabel('depth (km)')
+			ax1.set_ylabel('amplitude relative to main P wave')
+			ax1.plot(s_o.x_var, stack, color = colours[count])
+			
+			ax2.set_xlabel('longitude')
+			ax2.set_ylabel('latitude')
+			m = create_map(lons, lats)
+			inds = np.where(cluster == count+1)[0]
+			avg_lon = np.average([s_o.coords[i][1] for i in inds])
+			avg_lat = np.average([s_o.coords[i][0] for i in inds])
+			avg_lon1, avg_lat1 = m(avg_lon, avg_lat)
+			for i in inds:
+				lon, lat = m(s_o.coords[i][1], s_o.coords[i][0])
+				m.plot(lon, lat, marker='x', markeredgecolor = colour_clusters[i])
+			m.plot(avg_lon1, avg_lat1, marker='x', markersize=7, markeredgecolor='black', LineStyle='None', label=str(avg_lat) + ', ' + str(avg_lon))
+			count+=1
+			ax2.legend()
+			fig.savefig(figname + str(count))
+			ax1.clear()
+			ax2.clear()
 	
 	# Initialising final figure
 	
@@ -89,223 +85,135 @@ def plot(stacks, depths, cluster, coords, seis_data, figname, anomal=True, plot_
 	# Plotting final figure
 	
 	count = 0
-	for stack in stacks:
-		if (anomal == False and len(np.where(cluster == count+1)[0])<400):
-			count+=1
-		else:
-			ax1.plot(depths, stack, color = colours[count])
-			count+=1
-	for i in range(len(coords)):
-		lon, lat = m(coords[i][1], coords[i][0])
+	for stack in s_o.stacks:
+		ax1.plot(s_o.x_var, stack, color = colours[count])
+		count+=1
+	for i in range(len(s_o.coords)):
+		lon, lat = m(s_o.coords[i][1], s_o.coords[i][0])
 		m.plot(lon, lat, marker='x', markeredgecolor=colour_clusters[i])
 	fig.savefig(figname)
+	fig.clear()
+	
+	return
 	
 # Plots depth of peak at a certain lon, lat as a colourmap
 
-def depth_plot(cluster, stacks, coords, depths, min_depth, max_depth, figname):
+def depth_plot(s_o, min, max, figname):
 	
 	# Find peaks
-	
-	cut_index_1 = np.argmax(depths>min_depth)
-	cut_index_2 = np.argmax(depths>max_depth)
+
+	depths = s_o.x_var
+	cut_index_1 = np.argmax(depths>min)
+	cut_index_2 = np.argmax(depths>max)
 	cropped_depths = depths[cut_index_1:cut_index_2]
-	cropped_stacks = [stack[cut_index_1:cut_index_2] for stack in stacks]
+	cropped_stacks = [stack[cut_index_1:cut_index_2] for stack in s_o.stacks]
 	signal_depths = [cropped_depths[np.argmax(stack)] for stack in cropped_stacks]
-	coord_depths = [signal_depths[cluster[i]-1] for i in range(len(coords))]
+	coord_depths = [signal_depths[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
 	# Plot figure
 	
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_depths, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
-	fig.savefig(figname)
-	fig.clear()
-
+	plot_heatmap(coord_depths, s_o.coords, figname)
+	
 	return
 
 # Plots thickness of MTZ as colormap
 
-def MTZ_plot(cluster, stacks, coords, depths, figname):
+def MTZ_plot(s_o, figname):
 	
 	# Find peaks and therefore MTZ thickness
 	
+	depths = s_o.x_var
 	cut_index_1 = np.argmax(depths>380)
 	cut_index_2 = np.argmax(depths>460)
 	cut_index_3 = np.argmax(depths>590)
 	cut_index_4 = np.argmax(depths>680)
 	cropped_depths_1 = depths[cut_index_1:cut_index_2]
-	cropped_stacks_1 = [stack[cut_index_1:cut_index_2] for stack in stacks]
+	cropped_stacks_1 = [stack[cut_index_1:cut_index_2] for stack in s_o.stacks]
 	cropped_depths_2 = depths[cut_index_3:cut_index_4]
-	cropped_stacks_2 = [stack[cut_index_3:cut_index_4] for stack in stacks]
+	cropped_stacks_2 = [stack[cut_index_3:cut_index_4] for stack in s_o.stacks]
 	signal_depths_1 = [cropped_depths_1[np.argmax(stack)] for stack in cropped_stacks_1]
 	signal_depths_2 = [cropped_depths_2[np.argmax(stack)] for stack in  cropped_stacks_2]
 	MTZ_widths = [j - i for i, j in np.stack((signal_depths_1, signal_depths_2), axis = -1)]
-	coord_widths = [MTZ_widths[cluster[i]-1] for i in range(len(coords))]
+	coord_widths = [MTZ_widths[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
         # Plot figure
 	
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_widths, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
-	plt.grid()
-	fig.savefig(figname)
-	fig.clear()
-
+	plot_heatmap(coord_widths, s_o.coords, figname)
+	
 	return
 
-def temp_plot(cluster, stacks, coords, depths, figname):
-
-        # Find peaks and therefore MTZ thickness
-
-	cut_index_1 = np.argmax(depths>390)
-	cut_index_2 = np.argmax(depths>470)
-	cut_index_3 = np.argmax(depths>620)
-	cut_index_4 = np.argmax(depths>710)
-	cropped_depths_1 = depths[cut_index_1:cut_index_2]
-	cropped_stacks_1 = [stack[cut_index_1:cut_index_2] for stack in stacks]
-	cropped_depths_2 = depths[cut_index_3:cut_index_4]
-	cropped_stacks_2 = [stack[cut_index_3:cut_index_4] for stack in stacks]
-	signal_depths_1 = [cropped_depths_1[np.argmax(stack)] for stack in cropped_stacks_1]
-	signal_depths_2 = [cropped_depths_2[np.argmax(stack)] for stack in cropped_stacks_2]
-	MTZ_widths = [j - i for i, j in np.stack((signal_depths_1, signal_depths_2), axis = -1)]
-	temps = [3600-8*depth for depth in MTZ_widths]
-	coord_temps = [temps[cluster[i]-1] for i in range(len(coords))]
-
-        # Plot figure
-
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_temps, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes, label="Temperature (K)")
-	fig.savefig(figname)
-	fig.clear()
-
-	return
-
-
-def var_plot(cluster, stacks, coords, seis_data, figname):
+def var_plot(s_o, figname):
 	
 	# Find cluster variances
 	
-	vars = np.zeros(len(stacks))
+	vars = np.zeros(len(s_o.stacks))
 	count = 1
-	for stack in stacks:
-		orig = seis_data[np.where(cluster==count)[0]]
-		vars[count-1] = c_v(cluster, count, seis_data)
+	for stack in s_o.stacks:
+		orig = s_o.seis_data[np.where(s_o.cluster==count)[0]]
+		vars[count-1] = c_v(s_o.cluster, count, s_o.seis_data)
 		count += 1
-	coord_vars = [vars[cluster[i]-1] for i in range(len(coords))]
+	coord_vars = [vars[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
 	# Plot figure
 	
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_vars, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
-	fig.savefig(figname)
-	fig.clear()
-
+	plot_heatmap(coord_vars, s_o.coords, figname)
+	
 	return
 
-
-def sign_plot(cluster, stacks, coords, seis_data, figname):
+def sign_plot(s_o, figname):
 	
-	# Find cluster variances
+	# Find signs
 	
-	signs = np.zeros(len(stacks))
+	signs = np.zeros(len(s_o.stacks))
 	count = 0
-	for stack in stacks:
+	for stack in s_o.stacks:
 		if stack[np.argmax(np.abs(stack))]>0:
 			signs[count]=1
 		else:
 			signs[count]=-1
 		count += 1
-	coord_signs = [signs[cluster[i]-1] for i in range(len(coords))]
+	coord_signs = [signs[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
 	# Plot figure
-	
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_signs, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
-	fig.savefig(figname)
-	fig.clear()
+
+	plot_heatmap(coord_signs, s_o.coords, figname)
 	
 	return
 
-def mag_plot(cluster, stacks, coords, seis_data, times, figname):
+def mag_plot(s_o, figname):
 	
 	# Find (signed) magnitude of largest peak after ScS
 	
-	mags = np.zeros(len(stacks))
-	cut1 = np.where(0<times)[0][0]
-	cut2 = np.where(5.5<times)[0][0]
-	stacks = np.array([stack[cut1:cut2] for stack in stacks])
+	mags = np.zeros(len(s_o.stacks))
+	cut1 = np.where(0<s_o.x_var)[0][0]
+	cut2 = np.where(5.5<s_o.x_var)[0][0]
+	stacks = np.array([stack[cut1:cut2] for stack in s_o.stacks])
 	count = 0
 	for stack in stacks:
 		mags[count] = stack[np.argmax(np.abs(stack))]
 		count += 1
-	coord_mags = [mags[cluster[i]-1] for i in range(len(coords))]
+	coord_mags = [mags[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
 	# Plot figure
 	
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_mags, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes, label = 'Peak Amplitude')
-	fig.savefig(figname)
-	fig.clear()
+	plot_heatmap(coord_mags, s_o.coords, figname)
 	 
 	return
 
-def peak_dist_plot(cluster, stacks, coords, seis_data, figname):
+def peak_dist_plot(s_o, figname):
 	
 	# Find cluster variances
 	
-	peak_dist = np.zeros(len(stacks))
+	peak_dist = np.zeros(len(s_o.stacks))
 	count = 0
-	for stack in stacks:
-		peak_dist[count] = np.argmax(np.abs(stack))
+	for stack in s_o.stacks:
+		peak_dist[count] = s_o.x_var[np.argmax(np.abs(stack))]
 		count += 1
 	coord_peak_dist = [peak_dist[cluster[i]-1] for i in range(len(coords))]
 	
 	# Plot figure
 	
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=coord_peak_dist, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
-	fig.savefig(figname)
-	fig.clear()
+	plot_heatmap(coord_peak_dist, s_o.coords, figname)
 	
 	return
 
@@ -341,3 +249,20 @@ def cluster_vote_map(final_clusters):
 	fig.clear()
 	
 	return
+
+def plot_heatmap(coord_heats, coords, figname):
+	
+	 # Plot figure
+	
+        fig = plt.figure(1)
+        axes = plt.gca()
+        axes.set_xlabel('longitude')
+        axes.set_ylabel('latitude')
+        lon = [coords[i][1] for i in range(len(coords))]
+        lat = [coords[i][0] for i in range(len(coords))]
+        cb = axes.scatter(lon, lat, c=coord_heats, marker='x', cmap=plt.cm.get_cmap('cool'))
+        fig.colorbar(cb, ax=axes)
+        fig.savefig(figname)
+        fig.clear()
+
+        return
