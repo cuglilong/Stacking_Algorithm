@@ -209,30 +209,16 @@ def peak_dist_plot(s_o, figname):
 
 def cluster_vote_map(final_clusters, figname):
 	
-	# Going through all pairs of points to find the degree of agreement between different test runs
+	# Going through all points to find the degree of agreement between different test runs
 	
-	coords = final_clusters[0].coords
-	data_range = range(len(final_clusters[0].seis_data))
-	heat_map = [0 for i in combinations(data_range, 2)]
-	count = 0
-	for c, d in combinations(data_range,2):
-		for a, b in combinations(final_clusters, 2):
-			c1 = a.cluster_keep
-			c2 = b.cluster_keep
-			if (c1[c] == c1[d] and c2[c] == c2[d]):
-				heat_map[count] += 1
-			elif (c1[c] != c1[d] and c2[c] != c2[d]):
-				heat_map[count] += 1
-		count+=1
-	
-	# Translating pairs of coords to individual coords
-	
-	vote_coords = np.zeros(len(data_range))
-	count=0
-	for i,j in combinations(data_range,2):
-		vote_coords[i] += heat_map[count]
-		vote_coords[j] += heat_map[count]
-		count+=1
+	coords = base_clusters.coords
+	data_range = range(len(base_clusters.seis_data))
+	vote_map = np.zeros(len(data_range))
+	for test in tests:
+		for i in data_range:
+			cluster_indices = np.where(base_cluster==base_cluster[i])[0]
+			other_cluster_indices = np.where(test==test[i])[0]
+			vote_map[i] += len(set(cluster_indices).intersection(other_cluster_indices))
 	
 	# Plot figure
 	
