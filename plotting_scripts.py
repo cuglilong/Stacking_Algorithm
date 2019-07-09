@@ -34,7 +34,7 @@ def plot(s_o, figname, plot_individual = False):
 	# Creating a random set of colours to distinguish between different clusters
 	
 	colours = []
-	for i in range(1, np.max(s_0.cluster).astype(int) +1):
+	for i in range(1, np.max(s_o.cluster).astype(int) +1):
 		a = '%06X' % randint(0, 0xFFFFFF)
 		b = '#' + a
 		colours.append(b)
@@ -48,6 +48,7 @@ def plot(s_o, figname, plot_individual = False):
 	ax2 = axes[1]
 	lons = np.array([co[1] for co in s_o.coords])
 	lats = np.array([co[0] for co in s_o.coords])
+	
 	# Plotting individual stacks, if plot_individual is true
 	
 	if plot_individual == True:
@@ -96,7 +97,7 @@ def plot(s_o, figname, plot_individual = False):
 	
 	return
 	
-# Plots depth of peak at a certain lon, lat as a colourmap
+# Plots depth of peak as a colourmap for all coordinates
 
 def depth_plot(s_o, min, max, figname):
 	
@@ -142,6 +143,8 @@ def MTZ_plot(s_o, figname):
 	
 	return
 
+# Plots variance within each cluster as a colourmap
+
 def var_plot(s_o, figname):
 	
 	# Find cluster variances
@@ -160,25 +163,7 @@ def var_plot(s_o, figname):
 	
 	return
 
-def sign_plot(s_o, figname):
-	
-	# Find signs
-	
-	signs = np.zeros(len(s_o.stacks))
-	count = 0
-	for stack in s_o.stacks:
-		if stack[np.argmax(np.abs(stack))]>0:
-			signs[count]=1
-		else:
-			signs[count]=-1
-		count += 1
-	coord_signs = [signs[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
-	
-	# Plot figure
-
-	plot_heatmap(coord_signs, s_o.coords, figname)
-	
-	return
+# Plots the signed magnitude of the largest peak after 0 ScS as a colourmap
 
 def mag_plot(s_o, figname):
 	
@@ -200,16 +185,18 @@ def mag_plot(s_o, figname):
 	 
 	return
 
+# Plots distance of largest peak along the the x-variable as a colour map
+
 def peak_dist_plot(s_o, figname):
 	
-	# Find cluster variances
+	# Find peak distances
 	
 	peak_dist = np.zeros(len(s_o.stacks))
 	count = 0
 	for stack in s_o.stacks:
 		peak_dist[count] = s_o.x_var[np.argmax(np.abs(stack))]
 		count += 1
-	coord_peak_dist = [peak_dist[cluster[i]-1] for i in range(len(coords))]
+	coord_peak_dist = [peak_dist[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
 	# Plot figure
 	
@@ -217,7 +204,13 @@ def peak_dist_plot(s_o, figname):
 	
 	return
 
-def cluster_vote_map(final_clusters):
+# Plots how much different test runs agree that points are in the same cluster
+# Takes a series of several test clusters for the same data set, ie with a small number of points removed to introduce randomness
+
+def cluster_vote_map(final_clusters, figname):
+	
+	# Going through all pairs of points to find the degree of agreement between different test runs
+	
 	coords = final_clusters[0].coords
 	data_range = range(len(final_clusters[0].seis_data))
 	heat_map = [0 for i in combinations(data_range, 2)]
@@ -231,28 +224,23 @@ def cluster_vote_map(final_clusters):
 			elif (c1[c] != c1[d] and c2[c] != c2[d]):
 				heat_map[count] += 1
 		count+=1
-	heat_map_coords = np.zeros(len(data_range))
+	
+	# Translating pairs of coords to individual coords
+	
+	vote_coords = np.zeros(len(data_range))
 	count=0
 	for i,j in combinations(data_range,2):
-		heat_map_coords[i] += heat_map[count]
-		heat_map_coords[j] += heat_map[count]
+		vote_coords[i] += heat_map[count]
+		vote_coords[j] += heat_map[count]
 		count+=1
-	fig = plt.figure(1)
-	axes = plt.gca()
-	axes.set_xlabel('longitude')
-	axes.set_ylabel('latitude')
-	lon = [coords[i][1] for i in range(len(coords))]
-	lat = [coords[i][0] for i in range(len(coords))]
-	cb = axes.scatter(lon, lat, c=heat_map_coords, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
-	fig.savefig('test')
-	fig.clear()
+	
+	# Plot figure
+	
+	plot_heatmap(vote_coords, coords, figname)
 	
 	return
 
 def plot_heatmap(coord_heats, coords, figname):
-	
-	 # Plot figure
 	
         fig = plt.figure(1)
         axes = plt.gca()
