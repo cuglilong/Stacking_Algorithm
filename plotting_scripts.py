@@ -212,21 +212,21 @@ def cluster_vote_map(base_cluster, tests, figname):
 	# Going through all points to find the degree of agreement between different test runs
 	
 	coords = base_cluster.coords
-	cluster = base_cluster.cluster
-	data_range = range(len(base_cluster.seis_data))
-	print(data_range.shape)
+	cluster = base_cluster.cluster_keep
+	data_range = np.array(range(len(base_cluster.seis_data)))
+	print(data_range)
 	print(cluster.shape)
-	print(tests[0].shape)
+	print(tests[0].cluster.shape)
 	vote_map = np.zeros(len(data_range))
 	for test in tests:
 		for i in data_range:
 			cluster_indices = np.where(cluster==cluster[i])[0]
-			other_cluster_indices = np.where(test.cluster==test.cluster[i])[0]
+			other_cluster_indices = np.where(test.cluster_keep==test.cluster_keep[i])[0]
 			vote_map[i] += len(set(cluster_indices).intersection(other_cluster_indices))
 	
 	# Plot figure
 	
-	plot_heatmap(vote_coords, coords, figname)
+	plot_heatmap(vote_map, coords, figname)
 	
 	return
 
