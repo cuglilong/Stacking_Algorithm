@@ -207,17 +207,21 @@ def peak_dist_plot(s_o, figname):
 # Plots how much different test runs agree that points are in the same cluster
 # Takes a series of several test clusters for the same data set, ie with a small number of points removed to introduce randomness
 
-def cluster_vote_map(final_clusters, figname):
+def cluster_vote_map(base_cluster, tests, figname):
 	
 	# Going through all points to find the degree of agreement between different test runs
 	
-	coords = base_clusters.coords
-	data_range = range(len(base_clusters.seis_data))
+	coords = base_cluster.coords
+	cluster = base_cluster.cluster
+	data_range = range(len(base_cluster.seis_data))
+	print(data_range.shape)
+	print(cluster.shape)
+	print(tests[0].shape)
 	vote_map = np.zeros(len(data_range))
 	for test in tests:
 		for i in data_range:
-			cluster_indices = np.where(base_cluster==base_cluster[i])[0]
-			other_cluster_indices = np.where(test==test[i])[0]
+			cluster_indices = np.where(cluster==cluster[i])[0]
+			other_cluster_indices = np.where(test.cluster==test.cluster[i])[0]
 			vote_map[i] += len(set(cluster_indices).intersection(other_cluster_indices))
 	
 	# Plot figure
