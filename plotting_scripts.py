@@ -35,7 +35,7 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	# Creating a random set of colours to distinguish between different clusters
 	
 	colours = []
-	for i in set(np.max(s_o.cluster).astype(int)):
+	for i in set(s_o.cluster.astype(int)):
 		a = '%06X' % randint(0, 0xFFFFFF)
 		rgb = tuple(int(a[i:i+2], 16) for i in (0, 2, 4))
 		hsl = colorsys.rgb_to_hls(rgb[0],rgb[1],rgd[2])
