@@ -53,11 +53,11 @@ def combined_metric(a, b, include_dist = True, include_corr = False):
 # that the average of a cluster is the 'typical' point, rather than the centroid, or another more complicated metric 
 
 def stack_coords(cluster, coords):
-	print('hi')	
+	
 	cls = set(cluster.astype(int))
 	coords = np.array([[np.average([coords[i][j] for i in np.where(cluster == cl)[0]]) for j in [0, 1]] for cl in cls])
 	coords = np.nan_to_num(coords)
-	print('bye')
+	
 	return coords
 
 # Clustering and stacking data

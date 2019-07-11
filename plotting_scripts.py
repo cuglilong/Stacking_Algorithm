@@ -15,7 +15,7 @@ from collections import Counter
 from itertools import combinations
 import colorsys
 
-# Create map of western US to overlay location points on
+# Create map of area to overlay location points on
 
 def create_map(lon, lat):
 	m = Basemap(llcrnrlon=np.min(lon)-5.,llcrnrlat=np.min(lat)-5.,urcrnrlon=np.max(lon)+5.,urcrnrlat=np.max(lat)+5.,
@@ -37,9 +37,8 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	colours = []
 	for i in set(s_o.cluster.astype(int)):
 		hex = '%06X' % randint(0, 0xFFFFFF)
-		rgb = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
-		hsl = colorsys.rgb_to_hls(rgb[0],rgb[1],rgb[2])
-		colours.append(hsl)
+		rgb = tuple(int(hex[i:i+2], 16)/255 for i in (0, 2, 4))
+		colours.append(rgb)
 	colour_clusters = [colours[(s_o.cluster[j]-1)] for j in range(len(s_o.cluster))]
 
 	# If a number of tests have been run, using vote map to determine color luminance for each point
@@ -47,14 +46,19 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	if vote_map != []:
 		
 		# Rescale vote_map to go between 0 and 1
-		
+
+		colour_clusters = [list(i) for i in colour_clusters]
 		max = np.max(vote_map)
 		min = np.min(vote_map)
 		grad = (max-min)
 		sat_map = [(i-min)/grad for i in vote_map]
-		print(sat_map)
-		for j in range(colour_clusters):
-			colour_clusters[j][2] = sat_map[j]
+		for j in range(len(colour_clusters)):
+			c_c = colour_clusters[j]
+			hsv = list(colorsys.rgb_to_hsv(c_c[0],c_c[1],c_c[2]))
+			print(hsv)
+			hsv[1] = sat_map[j]
+			print(hsv)
+			colour_clusters[j][1] = colorsys.hsv_to_rgb(hsv[0],hsv[1],hsv[2])
 	
 	# Initialising figure
 	
@@ -77,7 +81,7 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 			ax2.set_xlabel('longitude')
 			ax2.set_ylabel('latitude')
 			m = create_map(lons, lats)
-			inds = np.where(cluster == count+1)[0]
+			inds = np.where(s_o.cluster == count+1)[0]
 			avg_lon = np.average([s_o.coords[i][1] for i in inds])
 			avg_lat = np.average([s_o.coords[i][0] for i in inds])
 			avg_lon1, avg_lat1 = m(avg_lon, avg_lat)

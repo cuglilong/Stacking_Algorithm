@@ -177,10 +177,9 @@ class Stacker:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
 			else:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
-			
 			self.remove_anoms(self.average_cluster_variance()*1.5, variance=True)
 			self.remove_anoms(round(self.average_stack_size()/3))
-		self.remove_anoms(200)
+		#self.remove_anoms(200)
 		return
 
 	# Plots current stacks and other graphsand saves in directory of name filename
