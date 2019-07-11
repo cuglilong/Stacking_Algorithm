@@ -98,7 +98,7 @@ class Stacker:
 		to_remove = np.array([])
 		remove_cluster = np.array([])
 
-		for c in np.arange(1, np.max(self.cluster)+1):
+		for c in set(self.cluster):
 			a = np.where(self.cluster == c)[0]
 			if variance == True:
 				b = c_v(self.cluster, c, self.seis_data)
@@ -155,7 +155,7 @@ class Stacker:
 	def average_cluster_variance(self):
 		
 		a = 0
-		for cl in np.arange(1, int(np.max(self.cluster))+1):
+		for cl in set(self.cluster.astype(int)):
 			b = c_v(self.cluster, cl, self.seis_data)
 			a+=b
 		
@@ -171,9 +171,8 @@ class Stacker:
 		#self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
 		self.read_in(3847, 38468, 1040, 'large_data_stack')
 		#self.print_out('large_data_stack')
-		print(self.stacks.shape)
 		self.remove_anoms(5)
-		while len(self.stacks) > 35:
+		while len(self.stacks) > 50:
 			if geographical == True:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
 			else:
@@ -181,6 +180,7 @@ class Stacker:
 			
 			self.remove_anoms(self.average_cluster_variance()*1.5, variance=True)
 			self.remove_anoms(round(self.average_stack_size()/3))
+		self.remove_anoms(200)
 		return
 
 	# Plots current stacks and other graphsand saves in directory of name filename
@@ -192,7 +192,7 @@ class Stacker:
 		
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
-		ps.plot(self, plot_individual=indiv)
+		ps.plot(self, self.filename, plot_individual=indiv)
 		ps.MTZ_plot(self, self.filename+'_MTZ')
 		os.chdir('..')
 

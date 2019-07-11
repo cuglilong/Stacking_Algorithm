@@ -13,10 +13,8 @@ class Hawaii_Stacker(Stacker):
 		cut_length = round(len(self.seis_data)/20)
 		self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
 		#self.read_in(785, 7855, 750, 'hawaii_first_stack')
-		print(self.average_stack_size())
 		self.remove_anoms(10)
 		while len(self.stacks) > 35:
-			print(len(self.seis_data))
 			if geographical == True:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
 			else:
@@ -24,19 +22,5 @@ class Hawaii_Stacker(Stacker):
 			self.remove_anoms(self.average_cluster_variance()*2.5, variance=True)
 			self.remove_anoms(round(self.average_stack_size()/4))
 		
-		return
-
-	def plot(self, indiv=True, anomalies = True):
-		
-		print("Plotting...")
-		
-		os.mkdir(self.filename)
-		os.chdir(self.filename)
-		ps.plot(self, self.filename, plot_individual = indiv)
-		ps.sign_plot(self, self.filename+'_signs')
-		ps.mag_plot(self, self.filename+'_mags')
-		ps.peak_dist_plot(self, self.filename+'_peak_dist')
-		os.chdir('..')
-
 		return
 

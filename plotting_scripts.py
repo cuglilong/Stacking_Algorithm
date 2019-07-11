@@ -13,6 +13,7 @@ import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
 from collections import Counter
 from itertools import combinations
+import colorsys
 
 # Create map of western US to overlay location points on
 
@@ -29,16 +30,31 @@ def create_map(lon, lat):
 # Input: a stacker_object and figname
 # plot_indiviudal - if true, plots every individual stack in its own figure
 
-def plot(s_o, figname, plot_individual = False):
+def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	
 	# Creating a random set of colours to distinguish between different clusters
 	
 	colours = []
-	for i in range(1, np.max(s_o.cluster).astype(int) +1):
+	for i in set(np.max(s_o.cluster).astype(int)):
 		a = '%06X' % randint(0, 0xFFFFFF)
-		b = '#' + a
+		rgb = tuple(int(a[i:i+2], 16) for i in (0, 2, 4))
+		hsl = colorsys.rgb_to_hls(rgb[0],rgb[1],rgd[2])
 		colours.append(b)
 	colour_clusters = [colours[(s_o.cluster[j]-1)] for j in range(len(s_o.cluster))]
+
+	# If a number of tests have been run, using vote map to determine color luminance for each point
+	
+	if vote_map != []:
+		
+		# Rescale vote_map to go between 0 and 1
+		
+		max = np.max(vote_map)
+		min = np.min(vote_map)
+		grad = (max-min)
+		sat_map = [(i-min)/grad for i in vote_map]
+		print(sat_map)
+		for j in range(colour_clusters):
+			colour_clusters[j][2] = sat_map[j]
 	
 	# Initialising figure
 	
@@ -204,19 +220,16 @@ def peak_dist_plot(s_o, figname):
 	
 	return
 
-# Plots how much different test runs agree that points are in the same cluster
+# Generates an array demonstrating how much different test runs agree that points are in the same cluster
 # Takes a series of several test clusters for the same data set, ie with a small number of points removed to introduce randomness
 
-def cluster_vote_map(base_cluster, tests, figname):
+def cluster_vote_map(base_cluster, tests):
 	
 	# Going through all points to find the degree of agreement between different test runs
 	
 	coords = base_cluster.coords
 	cluster = base_cluster.cluster_keep
 	data_range = np.array(range(len(base_cluster.seis_data)))
-	print(data_range)
-	print(cluster.shape)
-	print(tests[0].cluster.shape)
 	vote_map = np.zeros(len(data_range))
 	for test in tests:
 		for i in data_range:
@@ -224,11 +237,7 @@ def cluster_vote_map(base_cluster, tests, figname):
 			other_cluster_indices = np.where(test.cluster_keep==test.cluster_keep[i])[0]
 			vote_map[i] += len(set(cluster_indices).intersection(other_cluster_indices))
 	
-	# Plot figure
-	
-	plot_heatmap(vote_map, coords, figname)
-	
-	return
+	return vote_map
 
 def plot_heatmap(coord_heats, coords, figname):
 	
