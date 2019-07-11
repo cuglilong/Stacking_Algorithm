@@ -36,10 +36,10 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	
 	colours = []
 	for i in set(s_o.cluster.astype(int)):
-		a = '%06X' % randint(0, 0xFFFFFF)
-		rgb = tuple(int(a[i:i+2], 16) for i in (0, 2, 4))
-		hsl = colorsys.rgb_to_hls(rgb[0],rgb[1],rgd[2])
-		colours.append(b)
+		hex = '%06X' % randint(0, 0xFFFFFF)
+		rgb = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
+		hsl = colorsys.rgb_to_hls(rgb[0],rgb[1],rgb[2])
+		colours.append(hsl)
 	colour_clusters = [colours[(s_o.cluster[j]-1)] for j in range(len(s_o.cluster))]
 
 	# If a number of tests have been run, using vote map to determine color luminance for each point
@@ -233,10 +233,13 @@ def cluster_vote_map(base_cluster, tests):
 	vote_map = np.zeros(len(data_range))
 	for test in tests:
 		for i in data_range:
-			cluster_indices = np.where(cluster==cluster[i])[0]
-			other_cluster_indices = np.where(test.cluster_keep==test.cluster_keep[i])[0]
-			vote_map[i] += len(set(cluster_indices).intersection(other_cluster_indices))
-	
+			cluster_indices = set(np.where(cluster==cluster[i])[0])
+			other_cluster_indices = set(np.where(test.cluster_keep==test.cluster_keep[i])[0])
+			intersect = len(cluster_indices.intersection(other_cluster_indices))
+			difference = len(cluster_indices.symmetric_difference(other_cluster_indices))
+			vote_map[i] += intersect
+			vote_map[i] -= difference
+
 	return vote_map
 
 def plot_heatmap(coord_heats, coords, figname):
