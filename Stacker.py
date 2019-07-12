@@ -167,9 +167,9 @@ class Stacker:
 		
 		print("Stacking...")
 		
-		#cut_length = round(len(self.seis_data)/10)
-		#self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
-		self.read_in(3847, 38468, 1040, 'large_data_stack')
+		cut_length = round(len(self.seis_data)/10)
+		self.cluster, self.stacks = cs.second_cluster(self.cluster, self.coords, self.stacks, threshold=cut_length, crit='maxclust', dist=True, corr=False)
+		#self.read_in(3847, 38468, 1040, 'large_data_stack')
 		#self.print_out('large_data_stack')
 		self.remove_anoms(5)
 		while len(self.stacks) > 50:
@@ -179,7 +179,7 @@ class Stacker:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 			self.remove_anoms(self.average_cluster_variance()*1.5, variance=True)
 			self.remove_anoms(round(self.average_stack_size()/3))
-		#self.remove_anoms(200)
+		self.remove_anoms(200)
 		return
 
 	# Plots current stacks and other graphsand saves in directory of name filename
@@ -196,7 +196,30 @@ class Stacker:
 		os.chdir('..')
 
 		return
+	
+	def stability_test(self, no_trials):
 
+		s = np.array([])
+		self.adaptive_stack()
+
+		for i in np.arange(len(no_trials)):
+			rand_remove = np.random.choice(range(len(seis_data)), round(len(self.seis_data)/500), replace=False)
+			temp_data = np.delete(seis_data, rand_remove, axis=0)
+			temp_coords = np.delete(coords, rand_remove, axis=0)
+			temp_cluster_keep = np.arange(1, len(seis_data)+1)
+			temp_cluster_keep[rand_remove] = 0
+			ss = Stacker.Stacker(depths, temp_coords, temp_data, 'test'+str(i))
+			ss.cluster_keep = temp_cluster_keep
+			s = np.append(s, ss)
+		
+		for test in s:
+			test.adaptive_stack()
+
+		vote_map = ps.cluster_vote_map(base, s)
+		ps.plot(base, base.filename, vote_map=vote_map, indiv=False)
+
+		return
+	
 	cluster = np.array([])
 	seis_data = np.array([])
 	stacks = np.array([])
