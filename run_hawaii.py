@@ -27,24 +27,25 @@ min_time = -7.5
 cut_1 = np.where(min_time<times)[0][0]
 cut_2 = np.where(0<times)[0][0]
 cut_3 = np.where(max_time<times)[0][0]
-seis_data1 = np.array([seis[cut_1:cut_3] for seis in seis_data])
-#seis_data2 = np.array([seis[cut_2:cut_3] for seis in seis_data])
-times = times[cut_1:cut_3]
+seis_data1 = np.array([seis[cut_1:cut_2] for seis in seis_data])
+seis_data2 = np.array([seis[cut_2:cut_3] for seis in seis_data])
+times = times[cut_2:cut_3]
 
 # Flip-reverse stacking
 
-#seis_data1 = -1*np.flip(seis_data1, axis=1)
-#seis_data = np.array([[j+k for j, k in zip_longest(seis_data1[i], seis_data2[i], fillvalue=0)] for i in range(len(seis_data1))])
-seis_data = seis_data1
+seis_data1 = -1*np.flip(seis_data1, axis=1)
+seis_data = np.array([[j+k for j, k in zip_longest(seis_data1[i], seis_data2[i], fillvalue=0)] for i in range(len(seis_data1))])
+
+
 # Generating array of test cases
 
 s = np.array([])
 base = Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_default')
 base.adaptive_stack()
-#base.plot()
+ps.plot(base, base.filename, plot_individual=False)
 
 for i in np.arange(1):
-	rand_remove = np.random.choice(range(len(seis_data)), 10, replace=False)
+	rand_remove = np.random.choice(range(len(seis_data)), 100, replace=False)
 	temp_data = np.delete(seis_data, rand_remove, axis=0)
 	temp_coords = np.delete(coords, rand_remove, axis=0)
 	temp_cluster_keep = np.arange(1, len(seis_data)+1)
@@ -55,7 +56,7 @@ for i in np.arange(1):
 
 for test in s:
 	test.adaptive_stack()
-	#test.plot()
-print('hi')
+	ps.plot(test, test.filename, plot_individual=False)
+
 vote_map = ps.cluster_vote_map(base, s)
 ps.plot(base, base.filename, vote_map=vote_map)

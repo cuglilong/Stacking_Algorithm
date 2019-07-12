@@ -52,14 +52,13 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 		min = np.min(vote_map)
 		grad = (max-min)
 		sat_map = [(i-min)/grad for i in vote_map]
+		print(len(colour_clusters))
 		for j in range(len(colour_clusters)):
 			c_c = colour_clusters[j]
 			hsv = list(colorsys.rgb_to_hsv(c_c[0],c_c[1],c_c[2]))
-			print(hsv)
 			hsv[1] = sat_map[j]
-			print(hsv)
-			colour_clusters[j][1] = colorsys.hsv_to_rgb(hsv[0],hsv[1],hsv[2])
-	
+			colour_clusters[j] = colorsys.hsv_to_rgb(hsv[0],hsv[1],hsv[2])
+			
 	# Initialising figure
 	
 	plt.figure(1)
@@ -237,12 +236,13 @@ def cluster_vote_map(base_cluster, tests):
 	vote_map = np.zeros(len(data_range))
 	for test in tests:
 		for i in data_range:
-			cluster_indices = set(np.where(cluster==cluster[i])[0])
-			other_cluster_indices = set(np.where(test.cluster_keep==test.cluster_keep[i])[0])
-			intersect = len(cluster_indices.intersection(other_cluster_indices))
-			difference = len(cluster_indices.symmetric_difference(other_cluster_indices))
+			same = set(np.where(cluster==cluster[i])[0])
+			diff = set(np.where(cluster!=cluster[i])[0])
+			same_test = set(np.where(test.cluster_keep==test.cluster_keep[i])[0])
+			diff_test = set(np.where(test.cluster_keep!=test.cluster_keep[i])[0])
+			intersect = len(same.intersection(same_test))
+			intersect += len(diff.intersection(diff_test))
 			vote_map[i] += intersect
-			vote_map[i] -= difference
 
 	return vote_map
 
