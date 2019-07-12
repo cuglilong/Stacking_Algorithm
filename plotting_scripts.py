@@ -52,7 +52,6 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 		min = np.min(vote_map)
 		grad = (max-min)
 		sat_map = [(i-min)/grad for i in vote_map]
-		print(len(colour_clusters))
 		for j in range(len(colour_clusters)):
 			c_c = colour_clusters[j]
 			hsv = list(colorsys.rgb_to_hsv(c_c[0],c_c[1],c_c[2]))

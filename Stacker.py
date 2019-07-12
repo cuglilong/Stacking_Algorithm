@@ -5,6 +5,7 @@ import random
 import matplotlib.pyplot as plt
 import sys
 import os
+import Stacker
 
 sys.path.append('./CCP_stacks/Plotting_Scripts')
 
@@ -194,29 +195,6 @@ class Stacker:
 		ps.plot(self, self.filename, plot_individual=indiv)
 		ps.MTZ_plot(self, self.filename+'_MTZ')
 		os.chdir('..')
-
-		return
-	
-	def stability_test(self, no_trials):
-
-		s = np.array([])
-		self.adaptive_stack()
-
-		for i in np.arange(len(no_trials)):
-			rand_remove = np.random.choice(range(len(seis_data)), round(len(self.seis_data)/500), replace=False)
-			temp_data = np.delete(seis_data, rand_remove, axis=0)
-			temp_coords = np.delete(coords, rand_remove, axis=0)
-			temp_cluster_keep = np.arange(1, len(seis_data)+1)
-			temp_cluster_keep[rand_remove] = 0
-			ss = Stacker.Stacker(depths, temp_coords, temp_data, 'test'+str(i))
-			ss.cluster_keep = temp_cluster_keep
-			s = np.append(s, ss)
-		
-		for test in s:
-			test.adaptive_stack()
-
-		vote_map = ps.cluster_vote_map(base, s)
-		ps.plot(base, base.filename, vote_map=vote_map, indiv=False)
 
 		return
 	

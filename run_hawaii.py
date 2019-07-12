@@ -7,6 +7,7 @@ from itertools import zip_longest, permutations, repeat
 from scipy.misc import comb
 import numpy as np
 import plotting_scripts as ps
+import clustering_scripts as cs
 
 # Reading in
 
@@ -36,27 +37,8 @@ times = times[cut_2:cut_3]
 seis_data1 = -1*np.flip(seis_data1, axis=1)
 seis_data = np.array([[j+k for j, k in zip_longest(seis_data1[i], seis_data2[i], fillvalue=0)] for i in range(len(seis_data1))])
 
-
 # Generating array of test cases
 
 s = np.array([])
 base = Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_default')
-base.adaptive_stack()
-ps.plot(base, base.filename, plot_individual=False)
-
-for i in np.arange(1):
-	rand_remove = np.random.choice(range(len(seis_data)), 100, replace=False)
-	temp_data = np.delete(seis_data, rand_remove, axis=0)
-	temp_coords = np.delete(coords, rand_remove, axis=0)
-	temp_cluster_keep = np.arange(1, len(seis_data)+1)
-	temp_cluster_keep[rand_remove] = 0
-	ss = Hawaii_Stacker.Hawaii_Stacker(times, temp_coords, temp_data, 'test'+str(i))
-	ss.cluster_keep = temp_cluster_keep
-	s = np.append(s, ss)
-
-for test in s:
-	test.adaptive_stack()
-	ps.plot(test, test.filename, plot_individual=False)
-
-vote_map = ps.cluster_vote_map(base, s)
-ps.plot(base, base.filename, vote_map=vote_map)
+cs.stability_test(base, 14)
