@@ -11,6 +11,8 @@ import mpl_toolkits
 import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
 from collections import Counter
+import Stacker
+import plotting_scripts as ps
 
 # Returns L2 correlation between traces tr1 and tr2
 
@@ -107,3 +109,26 @@ def second_cluster(cluster, coords, stacks, threshold, crit, dist = True, corr =
 	stacks = stacks[:, :-2]
 	
 	return cluster, stacks
+
+def stability_test(s_o, no_trials):
+
+	s = np.array([])
+	s_o.adaptive_stack()
+	
+	for i in np.arange(no_trials):
+		rand_remove = np.random.choice(range(len(s_o.seis_data)), round(len(s_o.seis_data)/500), replace=False)
+		temp_data = np.delete(s_o.seis_data, rand_remove, axis=0)
+		temp_coords = np.delete(s_o.coords, rand_remove, axis=0)
+		temp_cluster_keep = np.arange(1, len(s_o.seis_data)+1)
+		temp_cluster_keep[rand_remove] = 0
+		ss = Stacker.Stacker(s_o.x_var, temp_coords, temp_data, 'test'+str(i))
+		ss.cluster_keep = temp_cluster_keep
+		s = np.append(s, ss)
+	
+	for test in s:
+		test.adaptive_stack()
+		
+	vote_map = ps.cluster_vote_map(base, s)
+	ps.plot(base, base.filename, vote_map=vote_map, indiv=False)
+	
+	return
