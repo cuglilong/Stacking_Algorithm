@@ -16,9 +16,8 @@ Available plots include temperature based on MTZ thickness, depth of specified p
 
 - Execute an adaptive stacking protocol using `.adaptive_stack()`
 
-- Plot results using `.plot()`. The default arguments will result in a set of individual plots and an overall plot of all clusters, along with any other plots you have chosen.
-
-- 
+- Plot results using `.plot()`. The default arguments will result in a set of individual plots and an overall plot of all clusters, along with any other plots you have chosen, if you subclass `Stacker.py`.
+ 
 
 # Other notes
 
