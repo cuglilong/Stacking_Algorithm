@@ -5,6 +5,8 @@ from obspy import read
 import pickle
 from numpy import random
 import numpy as np
+import clustering_scripts as cs
+import plotting_scripts as ps
 
 # Reading in
 
@@ -20,5 +22,9 @@ coords = np.array([(l[1], l[2]) for l in locs])
 depths = np.array(seis[0].stats.depth)
 
 s1 = Stacker.Stacker(depths, coords, seis_data, 'default_stable')
+s2 = Stacker.Stacker(depths, coords, seis_data, 'default_stable_vote')
 
-cs.stability_test(s1, 9)
+s1.adaptive_stack()
+s1.plot()
+
+cs.stability_test(s2, 19)

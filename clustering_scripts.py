@@ -1,5 +1,3 @@
-from obspy import read
-from random import randint
 import matplotlib.pyplot as plt
 import sys
 from math import sin, cos, sqrt, atan2, pi
@@ -114,6 +112,7 @@ def stability_test(s_o, no_trials):
 
 	s = np.array([])
 	s_o.adaptive_stack()
+	s_o.plot()
 	base_class = s_o.__class__
 	
 	for i in np.arange(no_trials):
@@ -130,6 +129,6 @@ def stability_test(s_o, no_trials):
 		test.adaptive_stack()
 		
 	vote_map = ps.cluster_vote_map(s_o, s)
-	ps.plot(s_o, s_o.filename, vote_map=vote_map)
+	ps.plot(s_o, s_o.filename, vote_map=vote_map, plot_individual = True)
 	
 	return

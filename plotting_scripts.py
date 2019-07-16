@@ -193,7 +193,7 @@ def mag_plot(s_o, figname):
 	stacks = np.array([stack[cut1:cut2] for stack in s_o.stacks])
 	count = 0
 	for stack in stacks:
-		mags[count] = stack[np.argmax(np.abs(stack))]
+		mags[count] = np.max(np.abs(stack))
 		count += 1
 	coord_mags = [mags[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	

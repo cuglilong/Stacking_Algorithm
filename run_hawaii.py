@@ -36,9 +36,13 @@ times = times[cut_2:cut_3]
 
 seis_data1 = -1*np.flip(seis_data1, axis=1)
 seis_data = np.array([[j+k for j, k in zip_longest(seis_data1[i], seis_data2[i], fillvalue=0)] for i in range(len(seis_data1))])
+#seis_data = seis_data1
 
 # Generating array of test cases
 
 s = np.array([])
-base = Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_default')
-cs.stability_test(base, 14)
+base1 = Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'hawaii_default')
+base2 = base1
+base1.adaptive_stack()
+base1.plot()
+cs.stability_test(base2, 34)
