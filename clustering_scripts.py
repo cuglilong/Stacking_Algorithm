@@ -11,6 +11,7 @@ from mpl_toolkits.basemap import Basemap
 from collections import Counter
 import Stacker
 import plotting_scripts as ps
+from copy import deepcopy
 
 # Returns L2 correlation between traces tr1 and tr2
 
@@ -109,14 +110,12 @@ def second_cluster(cluster, coords, stacks, threshold, crit, dist = True, corr =
 	return cluster, stacks
 
 def stability_test(s_o, no_trials):
-
+	
 	s = np.array([])
-	s_o.adaptive_stack()
-	s_o.plot()
 	base_class = s_o.__class__
 	
 	for i in np.arange(no_trials):
-		rand_remove = np.random.choice(range(len(s_o.seis_data)), round(len(s_o.seis_data)/500), replace=False)
+		rand_remove = np.random.choice(range(len(s_o.seis_data)), round(len(s_o.seis_data)/50), replace=False)
 		temp_data = np.delete(s_o.seis_data, rand_remove, axis=0)
 		temp_coords = np.delete(s_o.coords, rand_remove, axis=0)
 		temp_cluster_keep = np.arange(1, len(s_o.seis_data)+1)
@@ -125,10 +124,12 @@ def stability_test(s_o, no_trials):
 		ss.cluster_keep = temp_cluster_keep
 		s = np.append(s, ss)
 	
+	s_o.adaptive_stack()
+	s_o.plot(indiv=False)
 	for test in s:
 		test.adaptive_stack()
-		
+	
 	vote_map = ps.cluster_vote_map(s_o, s)
-	ps.plot(s_o, s_o.filename, vote_map=vote_map, plot_individual = True)
+	ps.plot(s_o, s_o.filename, vote_map=vote_map, plot_individual = False)
 	
 	return

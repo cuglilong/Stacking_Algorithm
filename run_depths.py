@@ -1,10 +1,12 @@
 import Stacker
 import Hawaii_Stacker
+import Depth_Stacker
 import sys
 from obspy import read
 import pickle
 from numpy import random
 import numpy as np
+import clustering_scripts as cs
 
 # Reading in
 
@@ -29,11 +31,12 @@ seis_data1 = np.array([seis[cut_1:cut_2] for seis in seis_data])
 seis_data2 = np.array([seis[cut_2:cut_3] for seis in seis_data])
 depths1 = depths[cut_1:cut_2]
 depths2 = depths[cut_2:cut_3]
-shallow = Stacker.Stacker(depths1, coords, seis_data1, 'shallow')
-deep = Stacker.Stacker(depths2, coords, seis_data2, 'deep')
+shallow = Depth_Stacker.Depth_Stacker(depths2, coords, seis_data2, 'shallow1')
+deep = Depth_Stacker.Depth_Stacker(depths2, coords, seis_data2, 'deep2')
 
-shallow.adaptive_stack()
-shallow.plot()
+#shallow.adaptive_stack()
+#shallow.plot()
 
-deep.adaptive_stack()
-deep.plot()
+#deep.adaptive_stack()
+#deep.plot()
+cs.stability_test(deep, 9)

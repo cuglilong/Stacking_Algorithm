@@ -22,7 +22,7 @@ import rand_score
 from cluster_variation import c_v
 import plot_CCP
 
-class Stacker:
+class Stacker_Test:
 	
 	# Write out cluster and stacks to a csv
 
@@ -96,24 +96,23 @@ class Stacker:
 		
 		# Making list of those to remove
 		
-		to_remove = np.array([])
 		remove_cluster = np.array([])
 
-		for c in set(self.cluster):
-			a = np.where(self.cluster == c)[0]
-			if variance == True:
-				b = c_v(self.cluster, c, self.seis_data)
-				if b > anom_threshold:
-					to_remove = np.append(to_remove, [c-1], axis=0)
-					remove_cluster = np.append(remove_cluster, a, axis=0)
-			else:
+		if variance == False:
+			print('hi')
+			for c in set(self.cluster):
+				a = np.where(self.cluster == c)[0]
 				if (len(a) < anom_threshold):
-					to_remove = np.append(to_remove, [c-1], axis=0)
 					remove_cluster = np.append(remove_cluster, a, axis=0)
+		else:
+			print('ho')
+			for c in range(len(self.seis_data)):
+				stack = self.stacks[self.cluster[c]-1]
+				if cs.correlation(self.seis_data[c], stack) > anom_threshold:
+					remove_cluster = np.append(remove_cluster, c)
 		
 		# Removing all anomalies
 		
-		self.stacks = np.delete(self.stacks, to_remove.astype(int), axis=0)
 		self.cluster = np.delete(self.cluster, remove_cluster.astype(int))
 		self.coords = np.delete(self.coords, remove_cluster.astype(int), axis=0)
 		self.seis_data = np.delete(self.seis_data, remove_cluster.astype(int), axis=0)
@@ -140,6 +139,14 @@ class Stacker:
 				self.cluster_keep[c]=self.cluster[j]
 				j+=1
 				i+=1
+		
+		# Restacking
+		
+		stacks = np.array([[np.sum([self.seis_data[i][j] for i in np.where(self.cluster == cl+1)[0]]) for j in range(len(self.seis_data[0]))] for cl in range(np.max(self.cluster))])
+		for cl in set(self.cluster):
+			length = len(np.where(self.cluster == cl)[0])
+			stacks[cl-1] = stacks[cl-1]/length
+		self.stacks = np.nan_to_num(stacks)
 		
 		return
 
@@ -173,14 +180,14 @@ class Stacker:
 		#self.read_in(3847, 38468, 1040, 'large_data_stack')
 		#self.print_out('large_data_stack')
 		self.remove_anoms(5)
-		while len(self.stacks) > 50:
+		while len(self.stacks) > 35:
 			if geographical == True:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=False)
 			else:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
-			self.remove_anoms(self.average_cluster_variance()*1.5, variance=True)
-			#self.remove_anoms(round(self.average_stack_size()/3))
-		self.remove_anoms(200)
+			self.remove_anoms(self.average_cluster_variance()*2, variance=True)
+			self.remove_anoms(round(self.average_stack_size()/3))
+			
 		return
 
 	# Plots current stacks and other graphsand saves in directory of name filename
@@ -193,8 +200,7 @@ class Stacker:
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
 		ps.plot(self, self.filename, plot_individual=indiv)
-		ps.MTZ_plot(self, self.filename+'_MTZ')
-		ps.interpolation(self, 'test')
+		ps.mag_plot(self, self.filename+'_mags')
 		os.chdir('..')
 
 		return

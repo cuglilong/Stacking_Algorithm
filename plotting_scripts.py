@@ -73,7 +73,7 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 		count = 0
 		for stack in s_o.stacks:
 			ax1.set_xlabel('depth (km)')
-			ax1.set_ylabel('amplitude relative to main P wave')
+			ax1.set_ylabel('amplitude relative to main wave')
 			ax1.plot(s_o.x_var, stack, color = colours[count])
 			
 			ax2.set_xlabel('longitude')
@@ -96,7 +96,7 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	# Initialising final figure
 	
 	ax1.set_xlabel('depth (km)')
-	ax1.set_ylabel('amplitude relative to main P wave')
+	ax1.set_ylabel('amplitude relative to main wave')
 	ax2.set_xlabel('longitude')
 	ax2.set_ylabel('latitude')
 	m = create_map(lons, lats)
@@ -131,7 +131,7 @@ def depth_plot(s_o, min, max, figname):
 	
 	# Plot figure
 	
-	plot_heatmap(coord_depths, s_o.coords, figname)
+	plot_heatmap(coord_depths, s_o.coords, 'Depth of peak (km)', figname)
 	
 	return
 
@@ -157,9 +157,9 @@ def MTZ_plot(s_o, figname):
 	
         # Plot figure
 	
-	plot_heatmap(coord_widths, s_o.coords, figname)
+	plot_heatmap(coord_widths, s_o.coords, 'MTZ Thickness (km)', figname)
 	
-	return
+	return coord_widths
 
 # Plots variance within each cluster as a colourmap
 
@@ -177,7 +177,7 @@ def var_plot(s_o, figname):
 	
 	# Plot figure
 	
-	plot_heatmap(coord_vars, s_o.coords, figname)
+	plot_heatmap(coord_vars, s_o.coords, 'Variance of clusters', figname)
 	
 	return
 
@@ -199,7 +199,7 @@ def mag_plot(s_o, figname):
 	
 	# Plot figure
 	
-	plot_heatmap(coord_mags, s_o.coords, figname)
+	plot_heatmap(coord_mags, s_o.coords, 'Amplitude of largest peak', figname)
 	 
 	return
 
@@ -218,7 +218,7 @@ def peak_dist_plot(s_o, figname):
 	
 	# Plot figure
 	
-	plot_heatmap(coord_peak_dist, s_o.coords, figname)
+	plot_heatmap(coord_peak_dist, s_o.coords, 'Distance of peak from zero', figname)
 	
 	return
 
@@ -239,23 +239,38 @@ def cluster_vote_map(base_cluster, tests):
 			diff = set(np.where(cluster!=cluster[i])[0])
 			same_test = set(np.where(test.cluster_keep==test.cluster_keep[i])[0])
 			diff_test = set(np.where(test.cluster_keep!=test.cluster_keep[i])[0])
-			intersect = len(same.intersection(same_test))
+			intersect = 0
+			intersect += len(same.intersection(same_test))
 			intersect += len(diff.intersection(diff_test))
 			vote_map[i] += intersect
 
 	return vote_map
 
-def plot_heatmap(coord_heats, coords, figname):
+def plot_heatmap(coord_heats, coords, y_axis, figname):
 	
-        fig = plt.figure(1)
-        axes = plt.gca()
-        axes.set_xlabel('longitude')
-        axes.set_ylabel('latitude')
-        lon = [coords[i][1] for i in range(len(coords))]
-        lat = [coords[i][0] for i in range(len(coords))]
-        cb = axes.scatter(lon, lat, c=coord_heats, marker='x', cmap=plt.cm.get_cmap('cool'))
-        fig.colorbar(cb, ax=axes)
-        fig.savefig(figname)
-        fig.clear()
+	fig = plt.figure(1)
+	axes = plt.gca()
+	axes.set_xlabel('longitude')
+	axes.set_ylabel('latitude')
+	lon = [coords[i][1] for i in range(len(coords))]
+	lat = [coords[i][0] for i in range(len(coords))]
+	cb = axes.scatter(lon, lat, c=coord_heats, marker='x', cmap=plt.cm.get_cmap('cool'))
+	fig.colorbar(cb, ax=axes)
+	fig.savefig(figname)
+	fig.clear()
+	
+	return
 
-        return
+def interpolation(s_o, figname):
+	lat = s_o.coords[:][0]
+	lon = s_o.coords[:][1]
+	z = MTZ_plot(s_o, figname+'_MTZ')
+	f = scipy.interpolate.interp2d(x, y, z)
+	xnew = np.arange(np.min(lat), np.max(lat), 1e-1)
+	ynew = np.arange(np.min(lon), np.max(lon), 1e-1)
+	znew = f(xnew, ynew)
+	fig = plt.figure(1)
+	plt.plot(xnew, znew[0,:])
+	plt.savefig()
+
+	return
