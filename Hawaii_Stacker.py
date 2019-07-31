@@ -33,6 +33,7 @@ class Hawaii_Stacker(Stacker):
 		os.chdir(self.filename)
 		ps.plot(self, self.filename, plot_individual=indiv)
 		ps.mag_plot(self, self.filename+'_mags')
+		ps.interpolation(self, self.filename+'_interpol')
 		os.chdir('..')
 		
 		return

@@ -1,31 +1,34 @@
 import Stacker
 import Hawaii_Stacker
+import Stacker_Test
 import sys
 from obspy import read
 import pickle
 from numpy import random
 import numpy as np
 
+sys.path.append('./CCP_stacks/Plotting_Scripts')
+
+#import plot_CCP
+
 # Reading in
 
 file =sys.argv[1]
 print("Reading " + file + "...")
 seis = read(file,format='PICKLE')
-
 # Formatting relevant data
 
 seis_data1 = np.array([tr.dataSL2014 for tr in seis])
-print(len(seis_data1))
-print(seis_data1.shape)
 locs = np.array([t.stats.piercepoints['P410s']['410'] for t in seis]).astype(float)
 coords = np.array([(l[1], l[2]) for l in locs])
 depths = np.array(seis[0].stats.depth)
 
 seis_data2 = np.array([tr.dataPREM for tr in seis])
 
-s1 = Stacker.Stacker(depths, coords, seis_data1, 'test')
+s1 = Stacker_Test.Stacker_Test(depths, coords, seis_data1, 'test')
 #s2 = Stacker.Stacker(depths, coords, seis_data1, 'geographical1')
 #s3 = Stacker.Stacker(depths, coords, seis_data2, 'prem1')
+
 
 s1.adaptive_stack()
 s1.plot()

@@ -20,7 +20,7 @@ from mpl_toolkits.basemap import Basemap
 import csv
 import rand_score
 from cluster_variation import c_v
-import plot_CCP
+#import plot_CCP
 
 class Stacker_Test:
 	
@@ -99,13 +99,11 @@ class Stacker_Test:
 		remove_cluster = np.array([])
 
 		if variance == False:
-			print('hi')
 			for c in set(self.cluster):
 				a = np.where(self.cluster == c)[0]
 				if (len(a) < anom_threshold):
 					remove_cluster = np.append(remove_cluster, a, axis=0)
 		else:
-			print('ho')
 			for c in range(len(self.seis_data)):
 				stack = self.stacks[self.cluster[c]-1]
 				if cs.correlation(self.seis_data[c], stack) > anom_threshold:
@@ -200,7 +198,7 @@ class Stacker_Test:
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
 		ps.plot(self, self.filename, plot_individual=indiv)
-		ps.mag_plot(self, self.filename+'_mags')
+		ps.MTZ_plot(self, self.filename+'_MTZ')
 		os.chdir('..')
 
 		return

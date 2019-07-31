@@ -32,7 +32,7 @@ seis_data2 = np.array([seis[cut_2:cut_3] for seis in seis_data])
 depths1 = depths[cut_1:cut_2]
 depths2 = depths[cut_2:cut_3]
 shallow = Depth_Stacker.Depth_Stacker(depths2, coords, seis_data2, 'shallow1')
-deep = Depth_Stacker.Depth_Stacker(depths2, coords, seis_data2, 'deep2')
+deep = Stacker_Test.Stacker_Test(depths2, coords, seis_data2, 'deep2')
 
 #shallow.adaptive_stack()
 #shallow.plot()

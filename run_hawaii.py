@@ -41,7 +41,7 @@ seis_data = np.array([[j+k for j, k in zip_longest(seis_data1[i], seis_data2[i],
 # Generating array of test cases
 
 s = np.array([])
-base = Stacker_Test.Stacker_Test(times, coords, seis_data, 'base')
+base = Hawaii_Stacker.Hawaii_Stacker(times, coords, seis_data, 'base')
 #base.adaptive_stack()
 #base.plot()
-cs.stability_test(base, 19)
+cs.stability_test(base, 24)

@@ -8,6 +8,8 @@ import os
 import Stacker
 
 sys.path.append('./CCP_stacks/Plotting_Scripts')
+sys.path.append('./CCP_stacks/CCP_volumes')
+
 
 from math import sin, cos, sqrt, atan2, pi
 import numpy as np
@@ -20,7 +22,7 @@ from mpl_toolkits.basemap import Basemap
 import csv
 import rand_score
 from cluster_variation import c_v
-import plot_CCP
+#import plot_CCP
 
 class Stacker:
 	
@@ -193,8 +195,7 @@ class Stacker:
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
 		ps.plot(self, self.filename, plot_individual=indiv)
-		ps.MTZ_plot(self, self.filename+'_MTZ')
-		ps.interpolation(self, 'test')
+		ps.interpolation(self, self.filename+'_interpol')
 		os.chdir('..')
 
 		return

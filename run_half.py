@@ -1,5 +1,6 @@
 import Stacker
 import Hawaii_Stacker
+import Stacker_Test
 import sys
 from obspy import read
 import pickle
@@ -27,10 +28,10 @@ seis_data2 = np.delete(seis_data, rand_half, axis=0)
 coords1 = coords[rand_half]
 coords2 = np.delete(coords, rand_half, axis=0)
 
-s1 = Stacker.Stacker(depths, coords1, seis_data1, 'half1')
-s2 = Stacker.Stacker(depths, coords2, seis_data2, 'half2')
+s1 = Stacker_Test.Stacker_Test(depths, coords1, seis_data1, 'half1')
+s2 = Stacker_Test.Stacker_Test(depths, coords2, seis_data2, 'half2')
 
-#s1.adaptive_stack()
-#s1.plot()
+s1.adaptive_stack()
+s1.plot()
 s2.adaptive_stack()
 s2.plot()
