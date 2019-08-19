@@ -9,4 +9,4 @@ def c_v(cluster, cl, seis_data):
 	for wave in waveforms:
 		a+=cs.correlation(wave, average)
 
-	return a/len(waveforms)
+	return a/(len(waveforms))

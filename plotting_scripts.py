@@ -1,6 +1,7 @@
 from obspy import read
 from random import randint
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import sys
 from math import sin, cos, sqrt, atan2, pi
 import random
@@ -11,6 +12,7 @@ import scipy.cluster.hierarchy as cluster
 import mpl_toolkits
 import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.mplot3d import Axes3D
 from collections import Counter
 from itertools import combinations
 import colorsys
@@ -46,7 +48,7 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	if vote_map != []:
 		
 		# Rescale vote_map to go between 0 and 1
-
+		
 		colour_clusters = [list(i) for i in colour_clusters]
 		max = np.max(vote_map)
 		min = np.min(vote_map)
@@ -201,7 +203,7 @@ def mag_plot(s_o, figname):
 	
 	plot_heatmap(coord_mags, s_o.coords, 'Amplitude of largest peak', figname)
 	 
-	return
+	return coord_mags
 
 # Plots distance of largest peak along the the x-variable as a colour map
 
@@ -240,11 +242,11 @@ def cluster_vote_map(base_cluster, tests):
 			same_test = set(np.where(test.cluster_keep==test.cluster_keep[i])[0])
 			diff_test = set(np.where(test.cluster_keep!=test.cluster_keep[i])[0])
 			intersect = 0
-			intersect += len(same.intersection(same_test))
-			intersect += len(diff.intersection(diff_test))
+			intersect += len(same.intersection(same_test))/len(same)
+			intersect += len(diff.intersection(diff_test))/len(diff)
 			vote_map[i] += intersect
 
-	return vote_map
+	return vote_map/(2*len(tests))
 
 def plot_heatmap(coord_heats, coords, y_axis, figname):
 	
@@ -255,22 +257,43 @@ def plot_heatmap(coord_heats, coords, y_axis, figname):
 	lon = [coords[i][1] for i in range(len(coords))]
 	lat = [coords[i][0] for i in range(len(coords))]
 	cb = axes.scatter(lon, lat, c=coord_heats, marker='x', cmap=plt.cm.get_cmap('cool'))
-	fig.colorbar(cb, ax=axes)
+	plt.colorbar(cb, ax=axes)
 	fig.savefig(figname)
 	fig.clear()
 	
 	return
 
 def interpolation(s_o, figname):
-	lat = s_o.coords[:][0]
-	lon = s_o.coords[:][1]
+	lat = [co[0] for co in s_o.coords]
+	lon = [co[1] for co in s_o.coords]
 	z = MTZ_plot(s_o, figname+'_MTZ')
-	f = scipy.interpolate.interp2d(x, y, z)
-	xnew = np.arange(np.min(lat), np.max(lat), 1e-1)
-	ynew = np.arange(np.min(lon), np.max(lon), 1e-1)
-	znew = f(xnew, ynew)
-	fig = plt.figure(1)
-	plt.plot(xnew, znew[0,:])
-	plt.savefig()
+	file = open('vals', 'w')
+	file.write('lat, lon, values\n')
+	count = 0
+	for l in lat:
+		file.write(l + lon[count] + z[count] + '\n')
+		count += 1
+	file.close()
+	f = sp.interpolate.interp2d(lat, lon, z, fill_value='nan', kind='quintic')
+	xnew = np.linspace(np.min(lat), np.max(lat), num=50)
+	ynew = np.linspace(np.min(lon), np.max(lon), num=50)
+	X, Y = np.meshgrid(xnew, ynew)
+	f = np.vectorize(f)
+	Z = f(X, Y)
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	cs = ax.pcolor(Y, X, Z, cmap=plt.cm.coolwarm, vmin=200, vmax=350)
+	cb = plt.colorbar(cs, ax=ax)
+	cb.set_label('Transition zone thickness (km)', size=15)
+	#m = create_map(Y, X)
+	#X, Y = m(X, Y)
+	#cs = m.pcolor(Y, X, np.zeros(Z.shape), cmap=cm.RdBu, linewidth=0, rasterized=True)
+	#cs.cmap.set_under([0.8, 0.8, 0.8])
+	#cs.cmap.set_over([0.8, 0.8, 0.8])
+	#cb = m.colorbar()
+	#cb.set_label('Transition zone thickness (km)', size=15)
+	#cb.solids.set_rasterized(True)
+
+	plt.savefig(figname)
 
 	return

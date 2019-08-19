@@ -6,6 +6,8 @@ from obspy import read
 import pickle
 from numpy import random
 import numpy as np
+import clustering_scripts as cs
+import plotting_scripts as ps
 
 sys.path.append('./CCP_stacks/Plotting_Scripts')
 
@@ -16,6 +18,7 @@ sys.path.append('./CCP_stacks/Plotting_Scripts')
 file =sys.argv[1]
 print("Reading " + file + "...")
 seis = read(file,format='PICKLE')
+seis = np.array(seis[0:15000])
 # Formatting relevant data
 
 seis_data1 = np.array([tr.dataSL2014 for tr in seis])
@@ -24,15 +27,15 @@ coords = np.array([(l[1], l[2]) for l in locs])
 depths = np.array(seis[0].stats.depth)
 
 seis_data2 = np.array([tr.dataPREM for tr in seis])
+s1 = Stacker_Test.Stacker_Test(depths, coords, seis_data1, 'main')
+#s2 = Stacker_Test.Stacker_Test(depths, coords, seis_data1, 'geographical1')
+#s3 = Stacker_Test.Stacker_Test(depths, coords, seis_data2, 'prem1')
 
-s1 = Stacker_Test.Stacker_Test(depths, coords, seis_data1, 'test')
-#s2 = Stacker.Stacker(depths, coords, seis_data1, 'geographical1')
-#s3 = Stacker.Stacker(depths, coords, seis_data2, 'prem1')
-
-
+#cs.stability_test(s1, 9)
 s1.adaptive_stack()
-s1.plot()
-print(s1.average_cluster_variance())
+ps.interpolation(s1, 'inter_whole')
+#s1.plot()
+#print(s1.average_cluster_variance())
 #s2.adaptive_stack(geographical = True)
 #s2.plot()
 #print(s2.average_cluster_variance())

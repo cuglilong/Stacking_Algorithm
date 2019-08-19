@@ -115,12 +115,12 @@ def stability_test(s_o, no_trials):
 	base_class = s_o.__class__
 	
 	for i in np.arange(no_trials):
-		rand_remove = np.random.choice(range(len(s_o.seis_data)), round(len(s_o.seis_data)/50), replace=False)
+		rand_remove = np.random.choice(range(len(s_o.seis_data)), round(len(s_o.seis_data)/20), replace=False)
 		temp_data = np.delete(s_o.seis_data, rand_remove, axis=0)
 		temp_coords = np.delete(s_o.coords, rand_remove, axis=0)
 		temp_cluster_keep = np.arange(1, len(s_o.seis_data)+1)
 		temp_cluster_keep[rand_remove] = 0
-		ss = base_class(s_o.x_var, temp_coords, temp_data, 'test'+str(i))
+		ss = base_class(s_o.x_var, temp_coords, temp_data, s_o.filename + '_test'+str(i))
 		ss.cluster_keep = temp_cluster_keep
 		s = np.append(s, ss)
 	
@@ -128,6 +128,7 @@ def stability_test(s_o, no_trials):
 	s_o.plot(indiv=False)
 	for test in s:
 		test.adaptive_stack()
+		test.plot()
 	
 	vote_map = ps.cluster_vote_map(s_o, s)
 	ps.plot(s_o, s_o.filename, vote_map=vote_map, plot_individual = False)

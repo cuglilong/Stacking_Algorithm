@@ -10,7 +10,6 @@ import Stacker
 sys.path.append('./CCP_stacks/Plotting_Scripts')
 sys.path.append('./CCP_stacks/CCP_volumes')
 
-
 from math import sin, cos, sqrt, atan2, pi
 import numpy as np
 import scipy as sp
@@ -21,7 +20,7 @@ import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
 import csv
 import rand_score
-from cluster_variation import c_v
+import cluster_variation
 #import plot_CCP
 
 class Stacker:
@@ -104,7 +103,7 @@ class Stacker:
 		for c in set(self.cluster):
 			a = np.where(self.cluster == c)[0]
 			if variance == True:
-				b = c_v(self.cluster, c, self.seis_data)
+				b = cluster_variation.c_v(self.cluster, c, self.seis_data)
 				if b > anom_threshold:
 					to_remove = np.append(to_remove, [c-1], axis=0)
 					remove_cluster = np.append(remove_cluster, a, axis=0)
@@ -159,7 +158,7 @@ class Stacker:
 		
 		a = 0
 		for cl in set(self.cluster.astype(int)):
-			b = c_v(self.cluster, cl, self.seis_data)
+			b = cluster_variation.c_v(self.cluster, cl, self.seis_data)
 			a+=b
 		
 		return(a/np.max(self.cluster))
@@ -181,8 +180,8 @@ class Stacker:
 			else:
 				self.cluster, self.stacks = cs.second_cluster(self.cluster, cs.stack_coords(self.cluster, self.coords), self.stacks, threshold=1, crit='inconsistent', dist=True, corr=True)
 			self.remove_anoms(self.average_cluster_variance()*1.5, variance=True)
-			#self.remove_anoms(round(self.average_stack_size()/3))
-		self.remove_anoms(200)
+			self.remove_anoms(round(self.average_stack_size()/3))
+		#self.remove_anoms(200)
 		return
 
 	# Plots current stacks and other graphsand saves in directory of name filename
@@ -195,7 +194,7 @@ class Stacker:
 		os.mkdir(self.filename)
 		os.chdir(self.filename)
 		ps.plot(self, self.filename, plot_individual=indiv)
-		ps.interpolation(self, self.filename+'_interpol')
+		#ps.interpolation(self, self.filename+'_interpol')
 		os.chdir('..')
 
 		return
