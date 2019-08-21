@@ -1,11 +1,11 @@
 ## Cluster Stacking
 
-A series of scripts methods designed to cluster seismology data via hierarchical clustering methods, and then stack the resulting data.
+A series of scripts methods designed to cluster receiver functions via hierarchical clustering methods, and then stack the resulting data. There are no special dependencies apart from basic python libraries and matplotlib for plotting.
 
-## Manual
+## Manual For Use
 
-- Format your data correctly. For the code to run, you need the following data:
-1. An array of all seismic traces (designated `seis_data`), in an NxM numpy array, where N is the number of observations and M is the data points per observation. 
+- Start by formatting your data correctly. For the code to run, you need the following data:
+1. An array of all seismic traces/RFs (designated `seis_data`), in an NxM numpy array, where N is the number of observations and M is the data points per observation. 
 2. An array of grographical coordinates (`coords`) to which each trace corresponds, in a Nx2 numpy array. The first coordinate should correspond to the first trace, and so on. The coordinates should go lat, long rather than long, lat.
 3. An array of values that go along the x-axis (`x_var`), eg differential time as measured by a seismometer, or depth, if a velocity model has been used to do a depth conversion. This should be an Mx1 numpy array, where M is the number of data points per observation.
 
