@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.misc import comb
 
+# Randscore for two different clustering sytsems
+
 def rand_index_score(clusters, classes):
     tp_plus_fp = comb(np.bincount(clusters), 2).sum()
     tp_plus_fn = comb(np.bincount(classes), 2).sum()

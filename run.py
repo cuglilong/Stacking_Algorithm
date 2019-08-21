@@ -18,7 +18,7 @@ sys.path.append('./CCP_stacks/Plotting_Scripts')
 file =sys.argv[1]
 print("Reading " + file + "...")
 seis = read(file,format='PICKLE')
-seis = np.array(seis[0:15000])
+
 # Formatting relevant data
 
 seis_data1 = np.array([tr.dataSL2014 for tr in seis])
@@ -34,8 +34,8 @@ s1 = Stacker_Test.Stacker_Test(depths, coords, seis_data1, 'main')
 #cs.stability_test(s1, 9)
 s1.adaptive_stack()
 ps.interpolation(s1, 'inter_whole')
-#s1.plot()
-#print(s1.average_cluster_variance())
+s1.plot()
+print(s1.average_cluster_variance())
 #s2.adaptive_stack(geographical = True)
 #s2.plot()
 #print(s2.average_cluster_variance())

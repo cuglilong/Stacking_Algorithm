@@ -7,7 +7,6 @@ from math import sin, cos, sqrt, atan2, pi
 import random
 import numpy as np
 import scipy as sp
-import cluster_variation as c_v
 import scipy.cluster.hierarchy as cluster
 import mpl_toolkits
 import mpl_toolkits.basemap
@@ -16,6 +15,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from collections import Counter
 from itertools import combinations
 import colorsys
+import clustering_scripts as cs
 
 # Create map of area to overlay location points on
 
@@ -29,7 +29,7 @@ def create_map(lon, lat):
 	return m
 
 # Plots final stacks with and cluster locations.
-# Input: a stacker_object and figname
+# Input: a stacker_object (s_o) and figname
 # plot_indiviudal - if true, plots every individual stack in its own figure
 
 def plot(s_o, figname, plot_individual = False, vote_map=[]):
@@ -118,6 +118,7 @@ def plot(s_o, figname, plot_individual = False, vote_map=[]):
 	return
 	
 # Plots depth of peak as a colourmap for all coordinates
+# Input: Stacker object (s_o), minimum and maximum depths between which to search for peak, figure name
 
 def depth_plot(s_o, min, max, figname):
 	
@@ -138,6 +139,8 @@ def depth_plot(s_o, min, max, figname):
 	return
 
 # Plots thickness of MTZ as colormap
+# Input: Stacker object (s_o), figure name
+# Returns: Array of MTZ data corresponding to coordinates for use in interpolation
 
 def MTZ_plot(s_o, figname):
 	
@@ -155,6 +158,9 @@ def MTZ_plot(s_o, figname):
 	signal_depths_1 = [cropped_depths_1[np.argmax(stack)] for stack in cropped_stacks_1]
 	signal_depths_2 = [cropped_depths_2[np.argmax(stack)] for stack in  cropped_stacks_2]
 	MTZ_widths = [j - i for i, j in np.stack((signal_depths_1, signal_depths_2), axis = -1)]
+	
+	# Mapping array of MTZ_widths for each stack onto each coordinate
+	
 	coord_widths = [MTZ_widths[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
         # Plot figure
@@ -164,6 +170,7 @@ def MTZ_plot(s_o, figname):
 	return coord_widths
 
 # Plots variance within each cluster as a colourmap
+# Input: Stacker object (s_o), figure name
 
 def var_plot(s_o, figname):
 	
@@ -173,7 +180,7 @@ def var_plot(s_o, figname):
 	count = 1
 	for stack in s_o.stacks:
 		orig = s_o.seis_data[np.where(s_o.cluster==count)[0]]
-		vars[count-1] = c_v(s_o.cluster, count, s_o.seis_data)
+		vars[count-1] = cs.c_v(s_o.cluster, count, s_o.seis_data)
 		count += 1
 	coord_vars = [vars[s_o.cluster[i]-1] for i in range(len(s_o.coords))]
 	
@@ -184,6 +191,7 @@ def var_plot(s_o, figname):
 	return
 
 # Plots the signed magnitude of the largest peak after 0 ScS as a colourmap
+# Input: Stacker object (s_o), figure name
 
 def mag_plot(s_o, figname):
 	
@@ -206,6 +214,7 @@ def mag_plot(s_o, figname):
 	return coord_mags
 
 # Plots distance of largest peak along the the x-variable as a colour map
+# Input: Stacker object (s_o), figure name
 
 def peak_dist_plot(s_o, figname):
 	
@@ -226,6 +235,8 @@ def peak_dist_plot(s_o, figname):
 
 # Generates an array demonstrating how much different test runs agree that points are in the same cluster
 # Takes a series of several test clusters for the same data set, ie with a small number of points removed to introduce randomness
+# Input: Stacker object that corresponds to the base set of cluster (base_cluster), and array containing stacker objects that correspond to all the test runs (tests)
+# Returns: Array of normalised values for 'robustness' of the clustering at each coordinate
 
 def cluster_vote_map(base_cluster, tests):
 	
@@ -239,8 +250,8 @@ def cluster_vote_map(base_cluster, tests):
 		for i in data_range:
 			same = set(np.where(cluster==cluster[i])[0])
 			diff = set(np.where(cluster!=cluster[i])[0])
-			same_test = set(np.where(test.cluster_keep==test.cluster_keep[i])[0])
-			diff_test = set(np.where(test.cluster_keep!=test.cluster_keep[i])[0])
+			same_test = set(np.where(test.cluster_keep==test.cluster_keep[i])[0]) # Agreement for points in the same cluster
+			diff_test = set(np.where(test.cluster_keep!=test.cluster_keep[i])[0]) # Agreement for points in different clusters
 			intersect = 0
 			intersect += len(same.intersection(same_test))/len(same)
 			intersect += len(diff.intersection(diff_test))/len(diff)
@@ -248,7 +259,10 @@ def cluster_vote_map(base_cluster, tests):
 
 	return vote_map/(2*len(tests))
 
-def plot_heatmap(coord_heats, coords, y_axis, figname):
+# Generic function to plot a heatmap
+# Input: Array of coordinates (coords), array of values corresponding to coordinates (coord heats), figure name
+
+def plot_heatmap(coord_heats, coords, figname):
 	
 	fig = plt.figure(1)
 	axes = plt.gca()
@@ -263,37 +277,40 @@ def plot_heatmap(coord_heats, coords, y_axis, figname):
 	
 	return
 
+# Function to run interpolation on final clusters to smooth over sharp boundaries in the topography
+# Input: Stacker object (s_o), figure name
+
 def interpolation(s_o, figname):
+	
+	# Running interpolation
+	
 	lat = [co[0] for co in s_o.coords]
 	lon = [co[1] for co in s_o.coords]
 	z = MTZ_plot(s_o, figname+'_MTZ')
-	file = open('vals', 'w')
-	file.write('lat, lon, values\n')
-	count = 0
-	for l in lat:
-		file.write(l + lon[count] + z[count] + '\n')
-		count += 1
-	file.close()
-	f = sp.interpolate.interp2d(lat, lon, z, fill_value='nan', kind='quintic')
+	#file = open('vals.csv', 'w')
+	#file.write('lat, lon, values\n')
+	#count = 0
+	#for l in lat:
+	#	file.write(str(l) + ", " + str(lon[count]) + ", " + str(z[count]) + '\n')
+	#	count += 1
+	#file.close()
+	f = sp.interpolate.interp2d(lat, lon, z, fill_value='nan', kind='cubic')
+	
+	# Generating grid and interpolated z-values
+	
 	xnew = np.linspace(np.min(lat), np.max(lat), num=50)
 	ynew = np.linspace(np.min(lon), np.max(lon), num=50)
 	X, Y = np.meshgrid(xnew, ynew)
 	f = np.vectorize(f)
 	Z = f(X, Y)
+	
+	# Plotting figure
+	
 	fig = plt.figure()
 	ax = fig.add_subplot(111)
-	cs = ax.pcolor(Y, X, Z, cmap=plt.cm.coolwarm, vmin=200, vmax=350)
+	cs = ax.pcolor(Y, X, Z, cmap=plt.cm.RdBu, vmin=220, vmax=280)
 	cb = plt.colorbar(cs, ax=ax)
 	cb.set_label('Transition zone thickness (km)', size=15)
-	#m = create_map(Y, X)
-	#X, Y = m(X, Y)
-	#cs = m.pcolor(Y, X, np.zeros(Z.shape), cmap=cm.RdBu, linewidth=0, rasterized=True)
-	#cs.cmap.set_under([0.8, 0.8, 0.8])
-	#cs.cmap.set_over([0.8, 0.8, 0.8])
-	#cb = m.colorbar()
-	#cb.set_label('Transition zone thickness (km)', size=15)
-	#cb.solids.set_rasterized(True)
-
 	plt.savefig(figname)
 
 	return

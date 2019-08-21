@@ -20,7 +20,6 @@ import mpl_toolkits.basemap
 from mpl_toolkits.basemap import Basemap
 import csv
 import rand_score
-import cluster_variation
 #import plot_CCP
 
 class Stacker:
@@ -103,7 +102,7 @@ class Stacker:
 		for c in set(self.cluster):
 			a = np.where(self.cluster == c)[0]
 			if variance == True:
-				b = cluster_variation.c_v(self.cluster, c, self.seis_data)
+				b = cs.c_v(self.cluster, c, self.seis_data)
 				if b > anom_threshold:
 					to_remove = np.append(to_remove, [c-1], axis=0)
 					remove_cluster = np.append(remove_cluster, a, axis=0)
@@ -158,7 +157,7 @@ class Stacker:
 		
 		a = 0
 		for cl in set(self.cluster.astype(int)):
-			b = cluster_variation.c_v(self.cluster, cl, self.seis_data)
+			b = cs.c_v(self.cluster, cl, self.seis_data)
 			a+=b
 		
 		return(a/np.max(self.cluster))

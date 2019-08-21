@@ -18,10 +18,15 @@ from copy import deepcopy
 def correlation(tr1, tr2, n=2):
 	return np.absolute(np.sum([(tr1[i] - tr2[i])**n for i in range(len(tr1))]))
 
-# Returns average L2 correlation between all traces in a stack and their mean
+# Returns average L2 variation of a waveform in a cluster to the average waveform
 
-def group_corr(traces, stack):
-	return np.average([correlation(trace, stack) for trace in traces])
+def c_v(cluster, cl, seis_data):
+
+	waveforms = seis_data[np.where(cluster==cl)]
+	average = np.array([np.average([waveforms[i][j] for i in range(len(waveforms))]) for j in range(len(waveforms[0]))])
+	a = np.sum([correlation(wave, average) for wave in waveforms])
+
+	return a/(len(waveforms))
 
 # Haversine distance formula
 
@@ -38,6 +43,7 @@ def haversine(coord1, coord2):
 	return R*c
 
 # 'Distance' metric to use for clustering - can weight by distance, correlation, or both
+# Input: two traces that you want to compare (a and b), whether or not to weight by distance, correlation, or both
 
 def combined_metric(a, b, include_dist = True, include_corr = False):
 	
@@ -109,26 +115,35 @@ def second_cluster(cluster, coords, stacks, threshold, crit, dist = True, corr =
 	
 	return cluster, stacks
 
+# Perform bootstrapping procedure to check stability of final clusters
+# Input: Stacker_object that has had no stacking procedure run yet (s_o), and number of of tests to run (no_trials)
+
 def stability_test(s_o, no_trials):
 	
 	s = np.array([])
 	base_class = s_o.__class__
+	
+	# Generate array of 'Stacker' objects with a random 5% of the initial data removed
 	
 	for i in np.arange(no_trials):
 		rand_remove = np.random.choice(range(len(s_o.seis_data)), round(len(s_o.seis_data)/20), replace=False)
 		temp_data = np.delete(s_o.seis_data, rand_remove, axis=0)
 		temp_coords = np.delete(s_o.coords, rand_remove, axis=0)
 		temp_cluster_keep = np.arange(1, len(s_o.seis_data)+1)
-		temp_cluster_keep[rand_remove] = 0
-		ss = base_class(s_o.x_var, temp_coords, temp_data, s_o.filename + '_test'+str(i))
+		temp_cluster_keep[rand_remove] = 0 # Using reference cluster to keep track of deleted data
+		ss = base_class(s_o.x_var, temp_coords, temp_data, s_o.filename + '_test'+str(i)) # Creating new object
 		ss.cluster_keep = temp_cluster_keep
 		s = np.append(s, ss)
+	
+	# Stacking all tests
 	
 	s_o.adaptive_stack()
 	s_o.plot(indiv=False)
 	for test in s:
 		test.adaptive_stack()
-		test.plot()
+		#test.plot()
+	
+	# Plotting cluster 'vote map' to illustrate where the test cases agree
 	
 	vote_map = ps.cluster_vote_map(s_o, s)
 	ps.plot(s_o, s_o.filename, vote_map=vote_map, plot_individual = False)
