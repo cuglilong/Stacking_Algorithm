@@ -26,6 +26,8 @@ Available plots include temperature based on MTZ thickness, depth of specified p
 
 - cluster: array assigning every coordinate to a cluster. Starts with all of them in separate clusters (eg, [1, 2, 3, 4,....])
 
+- stacks: array containing all the stacked data corresponding to each cluster. Array is the length of the number of clusters, so gets smaller as the number of clusters go down.
+
 - seis_data: array containing the receiver function corresponding to every coodinate
 
 - x_var: array of the x variable corresponding to each receiver function (eg, depth)
