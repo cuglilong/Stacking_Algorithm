@@ -42,19 +42,19 @@ Available plots include temperature based on MTZ thickness, depth of specified p
 
 ## Available Plots
 
-# Default Plot
+### Default Plot
 
 - The default .plot function available in plotting scripts plots all the final stacked waveforms to the left and their corresponding clusters on a map to the right, in corresponding colours
 
 - While it gives a good overview of how the data ended up being clustered, it's not necessarily good for gleaning information for the resulting stacked traces
 
-# Heat maps
+### Heat maps
 
 - There is a .plot_heatmap() function that generates a geographical heatmap given an array of coordinates (ie `coords`) and any chosen value corresponding to those coordinates.
 
 - In the script at the moment, there are functions to find mantle transition zone width, the magnitude of the highest peak on the stack, etc, and plot them as heat maps.
 
-# Cluster Vote Map
+### Cluster Vote Map
 
 - This is a visualisation method for how 'robust' a certain set of clusters are to small changes.
 
@@ -68,15 +68,11 @@ Available plots include temperature based on MTZ thickness, depth of specified p
 
 - Then normalise and visualise how 'robust' the clustering of each point was using colour saturation
  
-# Interpolation
+### Interpolation
 
 - This is a method intended to 'smooth' out sharp edges in the clusters and get an overall look at the topographical variation
 
 - It uses the SciPy 2-D interpolation function to interpolate over a regular grid and plots the results
-
-## Other routines
-
-- Rand score
 
 ## Other notes
 
